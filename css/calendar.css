@@ -1,0 +1,107 @@
+/* Calendar Styles for Bookings Page */
+.calendar-container {
+    margin-bottom: 30px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.calendar-header h3 {
+    margin: 0;
+    color: #B9484E;
+}
+
+.calendar-nav-btn {
+    background-color: #f8f9fa;
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.calendar-nav-btn:hover {
+    background-color: #e9ecef;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+}
+
+.calendar-day-header {
+    text-align: center;
+    font-weight: bold;
+    padding: 10px 0;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+}
+
+.calendar-day {
+    min-height: 80px;
+    padding: 5px;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    position: relative;
+}
+
+.calendar-day.past {
+    background-color: #f8f9fa;
+    opacity: 0.7;
+}
+
+.calendar-day.today {
+    background-color: #fff8e1;
+    border-color: #ffecb3;
+}
+
+.calendar-day.other-month {
+    opacity: 0.4;
+}
+
+.day-number {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+.booking-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #B9484E;
+    display: inline-block;
+    margin-right: 5px;
+}
+
+.booking-item {
+    font-size: 0.75rem;
+    margin: 2px 0;
+    padding: 2px 4px;
+    background-color: rgba(185, 72, 78, 0.1);
+    border-left: 3px solid #B9484E;
+    border-radius: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+}
+
+.booking-item:hover {
+    background-color: rgba(185, 72, 78, 0.2);
+}

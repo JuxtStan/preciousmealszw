@@ -1,0 +1,557 @@
+/* Main Styles for Precious Meals & Bakes
+-------------------------------------------------- */
+
+/* General Styling */
+body {
+    font-family: 'Baskerville', serif;
+    background-color: #f5f6fa;
+    margin: 0;
+    padding: 0;
+    scroll-behavior: smooth;
+    line-height: 1.6;
+}
+
+/* Typography Hierarchy */
+h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    letter-spacing: 1px;
+    color: #333;
+}
+
+h2 {
+    font-size: 2.5rem;
+    font-weight: 600;
+    margin-bottom: 1.2rem;
+    color: #444;
+}
+
+h3 {
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: #555;
+}
+
+h4 {
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin-bottom: 0.8rem;
+    color: #666;
+}
+
+p {
+    font-size: 1.1rem;
+    line-height: 1.8;
+    margin-bottom: 1.2rem;
+    color: #555;
+}
+
+/* Colors */
+.primary-color {
+    color: #B9484E;
+}
+
+.accent-color {
+    color: #d8bc70;
+}
+
+.highlight-text {
+    color: #d8bc70;
+    font-weight: bold;
+}
+
+/* Header Section */
+header {
+    position: relative;
+    background: white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.navbar {
+    position: sticky; 
+    top: 0;
+    width: 100%;
+    background-color: #B9484E;
+    color: white;
+    padding: 8px 15px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    z-index: 900;
+    height: 60px;
+    transition: all 0.3s ease;
+}
+
+.navbar-brand img {
+    height: 40px;
+    margin-right: 10px;
+    transition: transform 0.3s ease;
+}
+
+.navbar-brand:hover img {
+    transform: scale(1.05);
+}
+
+.navbar-nav .nav-link {
+    color: white;
+    font-weight: bold;
+    margin: 0 10px;
+    font-size: 0.95rem;
+    position: relative;
+    padding: 5px 0;
+    transition: color 0.3s ease;
+}
+
+.navbar-nav .nav-link::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 2px;
+    bottom: 0;
+    left: 0;
+    background-color: #d8bc70;
+    transition: width 0.3s ease;
+}
+
+.navbar-nav .nav-link:hover {
+    color: #d8bc70;
+}
+
+.navbar-nav .nav-link:hover::after {
+    width: 100%;
+}
+
+.navbar-nav .active {
+    color: #d8bc70 !important;
+}
+
+.navbar-nav .active::after {
+    width: 100%;
+    background-color: #d8bc70;
+}
+
+.call-btn {
+    background-color: #d8bc70;
+    color: white !important;
+    font-weight: bold;
+    border-radius: 25px;
+    padding: 8px 20px !important;
+    font-size: 14px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    display: inline-block;
+}
+
+.call-btn:hover {
+    background-color: #c0a75a;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Hero Section */
+.hero {
+    text-align: center;
+    background: white;
+    padding: 80px 20px;
+    position: relative;
+}
+
+.hero h1 {
+    font-size: 3.5rem;
+    font-weight: bold;
+    letter-spacing: 2px;
+    color: #000;
+    margin-bottom: 30px;
+    animation: fadeInUp 1s ease;
+}
+
+/* Carousel Container Styles */
+.carousel-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  padding: 2rem;
+  background-color: #5c6ef8; /* purple-blue background */
+}
+
+.hero-img-square {
+  width: 140px;
+  height: 140px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.hero-img-square.active {
+  background: #ffffff;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  transform: scale(1.1);
+}
+
+.hero-img-square img,
+.hero-img-square svg {
+  width: 48px;
+  height: 48px;
+}
+
+.carousel-dots {
+  display: flex;
+  justify-content: center;
+  margin-top: 1rem;
+  gap: 8px;
+}
+
+.carousel-dots span {
+  width: 10px;
+  height: 10px;
+  background: #ffffff80;
+  border-radius: 50%;
+}
+
+.carousel-dots span.active {
+  background: #ffffff;
+}
+
+/* Sections */
+section {
+    padding: 80px 0;
+}
+
+section .container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Cards & Boxes */
+.card {
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+    margin-bottom: 25px;
+    border: none;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+}
+
+.card-img-top {
+    height: 220px;
+    object-fit: cover;
+}
+
+.card-body {
+    padding: 20px;
+}
+
+/* Buttons */
+.btn-primary {
+    background-color: #B9484E;
+    border: none;
+    padding: 10px 20px;
+    font-weight: 600;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    background-color: #a03940;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.btn-secondary {
+    background-color: #d8bc70;
+    border: none;
+    padding: 10px 20px;
+    font-weight: 600;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+    background-color: #c0a75a;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Form Styling */
+.form-container {
+    margin: 50px auto;
+    padding: 40px;
+    max-width: 600px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.form-label {
+    font-weight: 600;
+    color: #444;
+    margin-bottom: 8px;
+}
+
+.form-control {
+    border-radius: 6px;
+    padding: 12px 15px;
+    border: 1px solid #ddd;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: #d8bc70;
+    box-shadow: 0 0 0 0.2rem rgba(216, 188, 112, 0.25);
+}
+
+/* Footer */
+footer {
+    background-color: #B9484E;
+    color: white;
+    padding: 50px 0 20px;
+}
+
+footer h5 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 20px;
+}
+
+footer p, footer a {
+    font-size: 0.95rem;
+}
+
+footer a {
+    color: white;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+footer a:hover {
+    color: #FFD700;
+    text-decoration: underline;
+}
+
+.social-links a {
+    display: inline-block;
+    margin-right: 15px;
+    font-size: 1.2rem;
+    transition: transform 0.3s ease;
+}
+
+.social-links a:hover {
+    transform: translateY(-3px);
+}
+
+/* Gallery */
+.gallery-item {
+    margin-bottom: 30px;
+    position: relative;
+    overflow: hidden;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.gallery-item img {
+    width: 100%;
+    height: 250px;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.gallery-item:hover img {
+    transform: scale(1.05);
+}
+
+.gallery-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.3);
+    opacity: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.3s ease;
+}
+
+.gallery-item:hover .gallery-overlay {
+    opacity: 1;
+}
+
+.gallery-overlay i {
+    color: white;
+    font-size: 2rem;
+}
+
+/* About Section */
+#about {
+    background-color: #f8f9fa;
+    padding-top: 5rem;
+    padding-bottom: 5rem;
+}
+
+/* Testimonials */
+#testimonials {
+    background-image: url('../img/image26.jpg');
+    background-size: cover;
+    background-attachment: fixed;
+    color: white;
+    text-align: center;
+    position: relative;
+    padding: 100px 0;
+}
+
+#testimonials::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.6);
+}
+
+#testimonials .container {
+    position: relative;
+    z-index: 2;
+}
+
+.testimonial-card {
+    background: rgba(255,255,255,0.9);
+    border-radius: 10px;
+    padding: 30px;
+    margin: 20px 0;
+    color: #333;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease;
+}
+
+.testimonial-card:hover {
+    transform: translateY(-5px);
+}
+
+.testimonial-img {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin: 0 auto 20px;
+    border: 3px solid #d8bc70;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+    from { 
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInLeft {
+    from { 
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to { 
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes fadeInRight {
+    from { 
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to { 
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 992px) {
+    h1 { font-size: 2.8rem; }
+    h2 { font-size: 2.2rem; }
+    section { padding: 60px 0; }
+    .navbar-brand img { height: 35px; }
+}
+
+@media (max-width: 768px) {
+    h1 { font-size: 2.5rem; }
+    h2 { font-size: 2rem; }
+    p { font-size: 1rem; }
+    .navbar { padding: 8px 15px; }
+    .navbar-brand img { height: 30px; }
+    .navbar-nav .nav-link { font-size: 0.85rem; }
+    .card-img-top { height: 180px; }
+    section { padding: 50px 0; }
+    .form-container { padding: 30px 20px; }
+}
+
+@media (max-width: 576px) {
+    h1 { font-size: 2.2rem; }
+    h2 { font-size: 1.8rem; }
+    .hero { padding: 60px 15px; }
+    section { padding: 40px 0; }
+}
+
+/* AOS Animation Library Support */
+[data-aos] {
+    opacity: 0;
+    transition-property: opacity, transform;
+}
+
+[data-aos].aos-animate {
+    opacity: 1;
+}
+
+[data-aos="fade-up"] {
+    transform: translateY(20px);
+}
+
+[data-aos="fade-up"].aos-animate {
+    transform: translateY(0);
+}
+
+[data-aos="fade-down"] {
+    transform: translateY(-20px);
+}
+
+[data-aos="fade-down"].aos-animate {
+    transform: translateY(0);
+}
+
+[data-aos="fade-left"] {
+    transform: translateX(20px);
+}
+
+[data-aos="fade-left"].aos-animate {
+    transform: translateX(0);
+}
+
+[data-aos="fade-right"] {
+    transform: translateX(-20px);
+}
+
+[data-aos="fade-right"].aos-animate {
+    transform: translateX(0);
+}

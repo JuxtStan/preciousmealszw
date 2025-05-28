@@ -3,718 +3,415 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gallery-Precious Meals & Bakes</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
-     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
-     <link href="https://fonts.googleapis.com/css2?family=Baskerville&display=swap" rel="stylesheet">
-  <!-- Optional Bootstrap for styling (if needed) -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Gallery - Precious Meals & Bakes</title>
+    <meta name="description" content="Gallery - Precious Meals & Bakes - View our delicious food and catering services in Zimbabwe">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Baskerville&display=swap" rel="stylesheet">
+    <!-- AOS Animation Library -->
+    <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet">
+    <!-- Lightbox for Gallery -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="./css/style.css" rel="stylesheet">
+    <!-- jQuery -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
     <style>
-        body {
-    font-family: 'Baskerville', serif;
-    background-color: #f5f6fa;
-    margin: 0;
-    padding: 0;
-    scroll-behavior: smooth;
-}
-
-.form-container {
-    margin: 50px auto;
-    padding: 40px;
-    max-width: 600px;
-    background-color: white;
-    border-radius: 10px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-}
-
-.form-section .mb-3 {
-    margin-bottom: 1rem;
-}
-
-.form-label {
-    font-weight: bold;
-    color: #333;
-}
-        .btn-primary {
-            background-color: #af8958;
-            border: none;
-            transition: background-color 0.3s;
-        }
-        .btn-primary:hover {
-            background-color: #efd9a4;
-            transform: scale(1.02);
-        }
-    footer {
-      background-color: #B9484E; /* Set footer background to B9484E */
-      color: white; /* Keep text color white for contrast */
-    }
-
-    a.text-white:hover {
-      color: #FFD700; /* Optional: Gold hover effect for links */
-      text-decoration: underline;
-    }
-  
-
-
         /* General Styling */
         body {
-    font-family: 'Baskerville', serif;
-    background: url('./img/image26.jpg') no-repeat center center fixed;
-    background-size: cover;
-    background-attachment: fixed;
-    margin: 0;
-    padding: 0;
-    scroll-behavior: smooth;
-}
+            font-family: 'Baskerville', serif;
+            background-color: #f5f6fa;
+            margin: 0;
+            padding: 0;
+            scroll-behavior: smooth;
+        }
 
+        /* Buttons */
+        .btn-primary {
+            background-color: #B9484E;
+            border: none;
+            padding: 10px 20px;
+            font-weight: 600;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background-color: #a03940;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        /* Animation Classes */
+        .fade-in-up {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .fade-in-up.appear {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .stagger-item {
+            transition-delay: calc(var(--i) * 0.1s);
+        }
+
+        /* Gallery specific styling */
+        .gallery-hero {
+            background-color: rgba(185, 72, 78, 0.05);
+            padding: 80px 0;
+        }
+
+        .gallery-item {
+            margin-bottom: 30px;
+            overflow: hidden;
+            border-radius: 10px;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .gallery-item:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+        }
+
+        .gallery-item img {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            transition: all 0.5s ease;
+        }
+
+        .gallery-item:hover img {
+            transform: scale(1.05);
+        }
+
+        .highlight-text {
+            color: #d8bc70;
+        }
 
         /* Header Section */
-header {
-    position: relative;
-    background: white;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.navbar {
-    position: sticky; /* Makes the navbar stick to the top while scrolling */
-    top: 0;
-    width: 100%;
-    background-color: #B9484E;
-    color: white;
-    padding: 8px 15px; /* Adjusted padding to match button size */
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-    z-index: 900; /* Ensures the navbar stays on top of other content */
-    height: 50px; /* Fixed height to make it smaller */
-}
-
-.navbar-brand img {
-    height: 40px; /* Adjust height for a smaller logo */
-    margin-right: 10px;
-}
-
-.navbar-nav .nav-link {
-    color: #000;
-    font-weight: bold;
-    margin: 0 10px; /* Adjust margin for closer spacing */
-    font-size: 0.9rem; /* Slightly increase font size for better readability */
-}
-
-.navbar-nav .nav-link:hover {
-    color: #d8bc70;
-}
-
-.navbar-nav .active {
-    color: #ff7043 !important;
-}
-
-@media (max-width: 768px) {
-    .navbar {
-        padding: 8px 15px; /* Maintain similar padding for small screens */
-    }
-    .navbar-brand img {
-        height: 30px; /* Smaller logo on smaller screens */
-    }
-    .navbar-nav .nav-link {
-        font-size: 0.7rem; /* Adjust font size for smaller devices */
-    }
-}
-
-.call-btn {
-    background-color: #d8bc70;
-    color: white;
-    font-weight: bold;
-    border-radius: 25px;
-    padding: 5px 20px;
-    font-size: 14px;
-    text-decoration: none;
-}
-
-.call-btn:hover {
-    background-color: #d8bc70;
-}
-
-        /* Hero Section */
-        .hero {
-            text-align: center;
-            background: white;
-            padding: 50px 20px;
+        header {
             position: relative;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
 
-        .hero h1 {
-            font-size: 4rem;
+        .navbar {
+            position: sticky;
+            top: 0;
+            width: 100%;
+            background-color:#B9484E;
+            padding: 15px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            z-index: 900;
+        }
+
+        .navbar-brand img {
+            height: 40px;
+            margin-right: 10px;
+        }
+
+        .navbar-nav .nav-link {
+            color: #333;
+            font-weight: 600;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+        }
+
+        .navbar-nav .nav-link:hover {
+            color: #d8bc70;
+        }
+
+        .navbar-nav .active {
+            color:#c0a75a !important;
+        
+
+        .call-btn {
+            background-color: #d8bc70;
+            color: white !important;
             font-weight: bold;
-            letter-spacing: 2px;
-            color: #000;
-            margin-bottom: 30px;
+            border-radius: 25px;
+            padding: 8px 20px !important;
+            font-size: 14px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: inline-block;
         }
 
-       .highlight-text {
-    color: #d8bc70;
-}
+        .call-btn:hover {
+            background-color: #c0a75a;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
 
+        /* Footer styling */
+        footer {
+            background-color: #B9484E;
+            color: white;
+            padding: 40px 0 20px;
+        }
+
+        footer h5 {
+            color: #d8bc70;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        footer p {
+            margin-bottom: 10px;
+        }
+
+        footer .social-links a {
+            display: inline-block;
+            margin-right: 15px;
+            color: white;
+            font-size: 18px;
+            transition: all 0.3s;
+        }
+
+        footer .social-links a:hover {
+            color: #d8bc70;
+            transform: translateY(-3px);
+        }
+
+        footer ul li {
+            margin-bottom: 10px;
+        }
+
+        footer a.text-white {
+            transition: all 0.3s;
+        }
+
+        footer a.text-white:hover {
+            color: #d8bc70 !important;
+            text-decoration: none;
+        }
 
     </style>
 
 
     <!-- Header Section -->
-    
-       <header>
-    <nav class="navbar navbar-expand-lg">
-        <div class="container">
-            <a class="navbar-brand" href="./index.html">
-                <img src="./img/pmb.png" alt="Precious Meals & Bakes Logo">
-                <b class="highlight-text" style="color: #d8bc70; font-family: 'Baskerville', serif;">
-                    Precious Meals & Bakes
-                </b>
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
-                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation" style="outline: none;">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="./index.html">Home</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="./about-us.html">About Us</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="./services.html">Services</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="./gallery.html">Gallery</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="./why-us.html">Why Us</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="./bookings.html">Book Today</a>
-                    </li>
-                </ul>
-                <a href="tel:+263719448084" class="call-btn ms-3" style="padding: 8px 12px; border-radius: 5px; font-family: 'Baskerville', serif;">
-                    Call: +263 719 448 084
+    <header>
+        <nav class="navbar navbar-expand-lg">
+            <div class="container">
+                <a class="navbar-brand" href="./index.html">
+                    <img src="./img/pmb.png" alt="Precious Meals & Bakes Logo">
+                    <b class="highlight-text">Precious Meals & Bakes</b>
                 </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
+                    aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" href="./index.html">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="./about-us.html">About Us</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="./services.html">Services</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="./gallery.html">Gallery</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="./bookings.html">Book Today</a>
+                        </li>
+                    </ul>
+                    <a href="tel:+263719448084" class="call-btn ms-3">
+                        Call: +263 719 448 084
+                    </a>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+<!-- Gallery Hero Section -->
+<section class="gallery-hero py-5">
+    <div class="container">
+        <div class="row align-items-center mb-5">
+            <div class="col-lg-6 mb-4 mb-lg-0" data-aos="fade-right" data-aos-duration="1000">
+                <img src="./img/image6.jpg" alt="Our Gallery" class="img-fluid rounded shadow-lg">
+            </div>
+            <div class="col-lg-6" data-aos="fade-left" data-aos-duration="1000" data-aos-delay="200">
+                <h2>Our <span class="highlight-text">Gallery</span></h2>
+                <p class="lead">A visual journey through our culinary creations</p>
+                <p style="margin-top: 1.5rem; color: #444;">
+                    Explore our gallery showcasing a diverse collection of our finest culinary creations. From elegant wedding cakes to sumptuous corporate buffets, our images capture the artistry, attention to detail, and passion we bring to every dish.
+                </p>
+                <p style="color: #444;">
+                    Each photograph tells a story of flavor, creativity, and dedication to excellence. Browse through our visual feast and get inspired for your next event.
+                </p>
             </div>
         </div>
-    </nav>
-</header>
- <!-- Gallery Section -->
-    <section id="gallery" class="py-5">
-        <link href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.css" rel="stylesheet">
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/js/lightbox.min.js"></script>
-        
-
+    </div>
+</section>
+<!-- Gallery Section -->
+<section id="gallery" class="py-5 bg-light">
     <div class="container">
-        <h2 class="text-center mb-4">Gallery</h2>
+        <div class="text-center mb-5" data-aos="fade-up">
+            <h2>Our <span class="highlight-text">Food Gallery</span></h2>
+            <p class="lead">Feast your eyes on our culinary masterpieces</p>
+        </div>
+        
         <div class="row g-4">
-            <div class="col-md-4">
+            <div class="col-md-4 mb-4" data-aos="fade-up" data-aos-delay="100">
                 <div class="gallery-item">
-                    <img src="./img/image1.jpg" alt="Dish 1" class="img-fluid w-100" style="aspect-ratio: 1/1; object-fit: cover; border-radius: 3pt;" loading="lazy">
+                    <a href="./img/image1.jpg" data-lightbox="gallery" data-title="Delicious dish prepared by our chef">
+                        <img src="./img/image1.jpg" alt="Dish 1" class="img-fluid w-100" loading="lazy">
+                    </a>
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-4 mb-4" data-aos="fade-up" data-aos-delay="200">
                 <div class="gallery-item">
-                    <img src="./img/image2.jpg" alt="Dish 2" class="img-fluid w-100" style="aspect-ratio: 1/1; object-fit: cover; border-radius: 3pt;" loading="lazy">
+                    <a href="./img/image2.jpg" data-lightbox="gallery" data-title="Exquisite catering presentation">
+                        <img src="./img/image2.jpg" alt="Dish 2" class="img-fluid w-100" loading="lazy">
+                    </a>
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-4 mb-4" data-aos="fade-up" data-aos-delay="300">
                 <div class="gallery-item">
-                    <img src="./img/image3.jpg" alt="Dish 3" class="img-fluid w-100" style="aspect-ratio: 1/1; object-fit: cover; border-radius: 3pt;" loading="lazy">
+                    <a href="./img/image3.jpg" data-lightbox="gallery" data-title="Elegantly styled food arrangement">
+                        <img src="./img/image3.jpg" alt="Dish 3" class="img-fluid w-100" loading="lazy">
+                    </a>
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-4 mb-4" data-aos="fade-up" data-aos-delay="100">
                 <div class="gallery-item">
-                    <img src="./img/image4.jpg" alt="Dish 4" class="img-fluid w-100" style="aspect-ratio: 1/1; object-fit: cover; border-radius: 3pt;" loading="lazy">
+                    <a href="./img/image4.jpg" data-lightbox="gallery" data-title="Artfully created dessert">
+                        <img src="./img/image4.jpg" alt="Dish 4" class="img-fluid w-100" loading="lazy">
+                    </a>
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-4 mb-4" data-aos="fade-up" data-aos-delay="200">
                 <div class="gallery-item">
-                    <img src="./img/image5.jpg" alt="Dish 5" class="img-fluid w-100" style="aspect-ratio: 1/1; object-fit: cover; border-radius: 3pt;" loading="lazy">
+                    <a href="./img/image5.jpg" data-lightbox="gallery" data-title="Wedding catering setup">
+                        <img src="./img/image5.jpg" alt="Dish 5" class="img-fluid w-100" loading="lazy">
+                    </a>
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-4 mb-4" data-aos="fade-up" data-aos-delay="300">
                 <div class="gallery-item">
-                    <img src="./img/image6.jpg" alt="Dish 6" class="img-fluid w-100" style="aspect-ratio: 1/1; object-fit: cover; border-radius: 3pt;" loading="lazy">
+                    <a href="./img/image6.jpg" data-lightbox="gallery" data-title="Corporate event food display">
+                        <img src="./img/image6.jpg" alt="Dish 6" class="img-fluid w-100" loading="lazy">
+                    </a>
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-4 mb-4" data-aos="fade-up" data-aos-delay="100">
                 <div class="gallery-item">
-                    <img src="./img/image7.jpg" alt="Dish 7" class="img-fluid w-100" style="aspect-ratio: 1/1; object-fit: cover; border-radius: 3pt;" loading="lazy">
+                    <a href="./img/image7.jpg" data-lightbox="gallery" data-title="Chef's special creation">
+                        <img src="./img/image7.jpg" alt="Dish 7" class="img-fluid w-100" loading="lazy">
+                    </a>
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-4 mb-4" data-aos="fade-up" data-aos-delay="200">
                 <div class="gallery-item">
-                    <img src="./img/image8.jpg" alt="Dish 8" class="img-fluid w-100" style="aspect-ratio: 1/1; object-fit: cover; border-radius: 3pt;" loading="lazy">
+                    <a href="./img/image8.jpg" data-lightbox="gallery" data-title="Delicious appetizers">
+                        <img src="./img/image8.jpg" alt="Dish 8" class="img-fluid w-100" loading="lazy">
+                    </a>
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-4 mb-4" data-aos="fade-up" data-aos-delay="300">
                 <div class="gallery-item">
-                    <img src="./img/image9.jpg" alt="Dish 9" class="img-fluid w-100" style="aspect-ratio: 1/1; object-fit: cover; border-radius: 3pt;" loading="lazy">
+                    <a href="./img/image9.jpg" data-lightbox="gallery" data-title="Celebration cake creation">
+                        <img src="./img/image9.jpg" alt="Dish 9" class="img-fluid w-100" loading="lazy">
+                    </a>
                 </div>
             </div>
         </div>
     </div>
 </section>
 
-<style>
-    .hero {
-    position: relative;
-    height: 100vh;
-    background: url('./img/image26.jpg') no-repeat center center;
-    background-size: cover;
-}
-
-.hero-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5); /* Adjust overlay color as needed */
-}
-
-.hero-content {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    height: 100%;
-    text-align: center;
-    color: white;
-}
-
-h1.display-3 {
-    font-size: 3rem; /* Adjust size as needed */
-    color: #d8bc72; /* Dark Gold color */
-}
-
-p.lead {
-    font-size: 1.75rem;
-}
-
-.btn-primary {
-    background-color: #007bff; /* Adjust to your desired button color */
-    border: none;
-    padding: 0.75rem 1.5rem;
-    font-size: 1rem;
-    text-transform: uppercase;
-}
-
-.mt-3 {
-    margin-top: 1rem;
-}
-.image-chef {
-    display: flex;
-    justify-content: center; /* Centers the image horizontally */
-    align-items: center; /* Centers the image vertically */
-    width: 100%;
-    height: 100%; /* Adjust to fit your container's size */
-}
-
-.image-chef img {
-    width: 250px; /* Adjust the size of the image */
-    height: 250px; /* Maintain square shape */
-    border-radius: 5px; /* Rounded corners with 5pt radius */
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow effect */
-    object-fit: cover; /* Ensure the image fits the container without distortion */
-}
-#about {
-                background-color: #dee0ed;
-                padding-top: 3rem; /* Adjust top padding if needed */
-                padding-bottom: 3rem; /* Adjust bottom padding if needed */
-                }
-
-                #about .container {
-                    max-width: 800px; /* Optional: Limits the width of the container */
-                    margin: 0 auto; /* Centers the container */
-            }#why-choose-us {
-                    background-color: #dee0ed;
-                    padding-top: 3rem; /* Adjust top padding if needed */
-                    padding-bottom: 3rem; /* Adjust bottom padding if needed */
-                }
-
-                #why-choose-us .container {
-                    max-width: 800px; /* Optional: Limits the width of the container */
-                    margin: 0 auto; /* Centers the container */
-                }
-
-           /* Hero Section */
-        .hero {
-            background-image: url('./img/image26.jpg'); /* Replace with the path to your image */
-            background-size: cover;
-            background-position: center;
-            height: 100vh;
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .hero-overlay {
-            background-color: rgba(0, 0, 0, 0.1); /* Black with 10% opacity */
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-        }
-
-        .hero-content {
-            color: white; /* Text color for contrast */
-            z-index: 2;
-            text-align: center;
-        }
-
-        /* Button styling (optional) */
-        .btn {
-            padding: 10px 20px;
-            font-size: 1.25rem;
-            border-radius: 5px;
-        }
-        #why-choose-us {
-    background-color: #dee0ed; /* Dark Gold Background */
-    color: black; /* Adjust text color for contrast */
-}
-
-#why-choose-us .container {
-    max-width: 800px; /* Optional: Limits the width of the container */
-    margin: 0 auto; /* Centers the container */
-}
- .image-wrapper {
-    position: relative;
-    width: 100%;
-    padding-top: 100%; /* This gives a 1:1 aspect ratio */
-}
-
-.image-wrapper img {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover; /* Ensures the image covers the area without distortion */
-}
-
-
-                    .image-chef {
-                    display: flex;
-                    justify-content: center; /* Centers the image horizontally */
-                    align-items: center; /* Centers the image vertically */
-                    width: 100%;
-                    height: 100%; /* Adjust to fit your container's size */
-                }
-
-                .image-chef img {
-                    width: 250px; /* Adjust the size of the image */
-                    height: 250px; /* Maintain square shape */
-                    border-radius: 5px; /* Rounded corners with 5pt radius */
-                    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow effect */
-                    object-fit: cover; /* Ensure the image fits the container without distortion */
-                }
-                #why-choose-us p {
-    text-align: justify;
-    text-justify: inter-word; /* Ensures better spacing for justification */
-    margin-bottom: 15px; /* Adds space between paragraphs */
-}
-
-#testimonials {
-            font-family: 'Baskerville', serif;
-            background-image: url('./img/image26.jpg');
-            color: white;
-            text-align: center;
-            padding: 40px 0;
-            background-size: cover;
-            background-position: center;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        #testimonials .testimonials-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            padding: 20px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        #testimonials .testimonial-card {
-            background: white;
-            color: black;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            text-align: justify;
-            position: relative;
-        }
-
-        #testimonials .testimonial-card img {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            border: 3px solid white;
-            position: relative;
-            margin-top: -20px;
-            align-items: center;
-        }
-
-        #testimonials .testimonial-card h4 {
-            margin-top: 10px;
-        }
-
-        #testimonials .stars {
-            color: gold;
-            margin-top: 10px;
-        }
-
-        .review-form {
-            width: 50%;
-            margin: 20px auto;
-            padding: 20px;
-            background-color: rgba(255, 255, 255, 0.9);
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .review-form input, .review-form textarea {
-            width: 100%;
-            padding: 12px;
-            margin: 10px 0;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            font-size: 16px;
-            text-align: justify;
-        }
-
-        .review-form input[maxlength] {
-            max-length: 40;
-        }
-
-        .review-form button {
-            width: 100%;
-            background: #007bff;
-            color: white;
-            padding: 12px;
-            border: none;
-            border-radius: 5px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background 0.3s ease;
-        }
-
-        .review-form button:hover {
-            background: #b8860b;
-        }
-
-        .rating {
-            display: flex;
-            flex-direction: row-reverse;
-            justify-content: center;
-            margin: 10px 0;
-        }
-
-        .rating input {
-            display: none;
-        }
-
-        .rating label {
-            font-size: 25px;
-            color: gray;
-            cursor: pointer;
-            transition: color 0.3s;
-        }
-
-        .rating input:checked ~ label,
-        .rating label:hover,
-        .rating label:hover ~ label {
-            color: gold;
-        }
-         footer {
-    background: #1e2a38; /* Match theme */
-    color: white;
-    text-align: center;
-    padding: 20px 0;
-    position: relative;
-    width: 100%;
-    bottom: 0;
-}
-
-#testimonials {
-    padding-bottom: 80px; /* Ensure enough space above footer */
-}
-
-#testimonials .testimonials-container {
-    margin-bottom: 40px; /* Creates space below reviews */
-}
-
-#testimonials::after {
-    content: "";
-    display: block;
-    height: 100px; /* Extra spacing */
-}
-
- 
-        .video-container {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 20px;
-        }
-        iframe {
-            border-radius: 5pt;
-            width: 300px;
-            height: 300px;
-            background-color: #b89b72;
-            box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.2);
-            border: none;
-        }
-.hero {
-    position: relative;
-    height: 100vh;
-    background: url('path-to-your-background-image.jpg') no-repeat center center;
-    background-size: cover;
-}
-
-.hero-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5); /* Adjust overlay color as needed */
-}
-
-.hero-content {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    height: 100%;
-    text-align: center;
-    color: white;
-}
-
-h1.display-3 {
-    font-size: 3rem; /* Adjust size as needed */
-    color: #d8bc72; /* Dark Gold color */
-}
-
-p.lead {
-    font-size: 1.75rem;
-}
-
-.btn-primary {
-    background-color: #007bff; /* Adjust to your desired button color */
-    border: none;
-    padding: 0.75rem 1.5rem;
-    font-size: 1rem;
-    text-transform: uppercase;
-}
-
-.mt-3 {
-    margin-top: 1rem;
-}
-
- 
-        .video-container {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 20px;
-        }
-        iframe {
-            border-radius: 5pt;
-            width: 300px;
-            height: 300px;
-            background-color: #b89b72;
-            box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.2);
-            border: none;
-        }
-        h1 {
-                text-align: center;
-            }
-            .about{
-    text-align: center;
-}
-#about-text {
-    text-align: justify;
-}
-
-
-    
-
-
-    .image-chef {
-    display: flex;
-    justify-content: center; /* Centers the image horizontally */
-    align-items: center; /* Centers the image vertically */
-    width: 100%;
-    height: 100%; /* Adjust to fit your container's size */
-}
-
-.image-chef img {
-    width: 250px; /* Adjust the size of the image */
-    height: 250px; /* Maintain square shape */
-    border-radius: 5px; /* Rounded corners with 5pt radius */
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow effect */
-    object-fit: cover; /* Ensure the image fits the container without distortion */
-}
-
-</style>
-</body>
-    <footer class="py-4">
-    <div class="container text-center">
-      <p>&copy; 2025 Precious Meals & Bakes. All Rights Reserved.</p>
-      <p>Get In Touch With Us On: 
-        <a href="https://www.facebook.com/preciousmealsnbakes/" class="text-white">
-          <i class="bi bi-facebook"></i> precious meals n bakes 
-        </a>,
-        <a href="https://www.tiktok.com/@preciousmeals3?is_from_webapp=1&sender_device=pc" class="text-white">
-          <i class="bi bi-tiktok"></i> preciousmeals3
-        </a>, 
-        <a href="https://www.instagram.com/iamazwchef?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" class="text-white">
-          <i class="bi bi-instagram"></i> iamazwchef
-        </a>and on
-        <a href="https://wa.me/c/263719448084" class="text-white">
-          <i class="bi bi-whatsapp"></i> +263719448084.
-        </a>
-      </p>
+<!-- Footer -->
+<footer class="pt-5 pb-3">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-4 mb-4" data-aos="fade-up" data-aos-delay="100">
+                <h5>Precious Meals & Bakes</h5>
+                <p>Your premier catering partner for all occasions. We serve with passion and dedication.</p>
+                <div class="social-links mt-3">
+                    <a href="https://www.facebook.com/preciousmealsnbakes/" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
+                    <a href="https://www.instagram.com/iamazwchef/" aria-label="Instagram"><i class="bi bi-instagram"></i></a>
+                    <a href="https://www.tiktok.com/@preciousmeals3" aria-label="TikTok"><i class="bi bi-tiktok"></i></a>
+                    <a href="https://wa.me/c/263719448084" aria-label="WhatsApp"><i class="bi bi-whatsapp"></i></a>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4" data-aos="fade-up" data-aos-delay="200">
+                <h5>Quick Links</h5>
+                <ul class="list-unstyled">
+                    <li><a href="./index.html" class="text-white">Home</a></li>
+                    <li><a href="./about-us.html" class="text-white">About Us</a></li>
+                    <li><a href="./services.html" class="text-white">Services</a></li>
+                    <li><a href="./gallery.html" class="text-white">Gallery</a></li>
+                    <li><a href="./bookings.html" class="text-white">Book Today</a></li>
+                </ul>
+            </div>
+            <div class="col-md-4 mb-4" data-aos="fade-up" data-aos-delay="300">
+                <h5>Contact Us</h5>
+                <p><i class="bi bi-telephone-fill me-2"></i> <a href="tel:+263719448084" class="text-white">+263 719 448 084</a></p>
+                <p><i class="bi bi-envelope-fill me-2"></i> <a href="mailto:preciousmealszw@gmail.com" class="text-white">preciousmealszw@gmail.com</a></p>
+                <p><i class="bi bi-geo-alt-fill me-2"></i> Harare, Zimbabwe</p>
+            </div>
+        </div>
+        <hr class="my-4 bg-white">
+        <div class="text-center">
+            <p>&copy; 2025 Precious Meals & Bakes. All Rights Reserved.</p>
+        </div>
     </div>
+</footer>
 
-    <style>
-        footer {
-    background: #1e2a38; /* Match theme */
-    color: white;
-    text-align: center;
-    padding: 20px 0;
-    position: relative;
-    width: 100%;
-    bottom: 0;
-}
+<!-- Lightbox JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/js/lightbox.min.js"></script>
 
-#testimonials {
-    padding-bottom: 80px; /* Ensure enough space above footer */
-}
+<!-- Bootstrap Bundle with Popper -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-#testimonials .testimonials-container {
-    margin-bottom: 40px; /* Creates space below reviews */
-}
+<!-- AOS Animation Library -->
+<script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
 
-#testimonials::after {
-    content: "";
-    display: block;
-    height: 100px; /* Extra spacing */
-}
-</style>
-  </footer>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Custom JavaScript for animations -->
+<script>
+    // Initialize AOS animations
+    AOS.init({
+        duration: 800,
+        easing: 'ease-in-out',
+        once: true,
+        mirror: false
+    });
+    
+    // Additional animation for elements with fade-in-up class
+    document.addEventListener('DOMContentLoaded', function() {
+        const fadeElements = document.querySelectorAll('.fade-in-up');
+        
+        // Create an observer
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('appear');
+                }
+            });
+        }, { threshold: 0.1 });
+        
+        // Observe each element
+        fadeElements.forEach(element => {
+            observer.observe(element);
+        });
 
+        // Initialize lightbox
+        lightbox.option({
+            'resizeDuration': 200,
+            'wrapAround': true,
+            'albumLabel': 'Image %1 of %2'
+        });
+    });
+</script>
+</body>
 </html>
