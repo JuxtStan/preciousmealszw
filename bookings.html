@@ -199,6 +199,9 @@
                             <a class="nav-link" href="./about-us.html">About Us</a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link" href="#myBookings">My Bookings</a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link" href="./services.html">Services</a>
                         </li>
                         <li class="nav-item">
@@ -306,6 +309,8 @@
                             
                             <!-- Booking Form -->
                             <form id="bookingForm">
+
+                                
                                 <!-- Personal Information -->
                                 <div class="mb-4">
                                     <h5>Personal Information</h5>
@@ -325,20 +330,28 @@
                                     </div>
                                 </div>
                                 
-                                <!-- Event Details -->
+                                <!-- Event Information -->
                                 <div class="mb-4">
-                                    <h5>Event Details</h5>
+                                    <h5>Event Information</h5>
                                     <div class="row g-3">
                                         <div class="col-md-6">
                                             <label for="eventType" class="form-label">Event Type*</label>
                                             <select class="form-select" id="eventType" required>
                                                 <option value="" selected disabled>Select event type</option>
                                                 <option value="Wedding">Wedding</option>
+                                                <option value="Roora/Lobola">Roora/Lobola Ceremony</option>
                                                 <option value="Corporate Event">Corporate Event</option>
+                                                <option value="Business Lunch">Business Lunch</option>
+                                                <option value="Conference Catering">Conference Catering</option>
+                                                <option value="Private Party">Private Party</option>
                                                 <option value="Birthday Party">Birthday Party</option>
                                                 <option value="Anniversary">Anniversary</option>
                                                 <option value="Graduation">Graduation</option>
-                                                <option value="Other">Other</option>
+                                                <option value="Baby Shower">Baby Shower</option>
+                                                <option value="Bridal Shower">Bridal Shower</option>
+                                                <option value="Family Gathering">Family Gathering</option>
+                                                <option value="Holiday Event">Holiday Event</option>
+                                                <option value="Other">Other (Please specify in Special Requests)</option>
                                             </select>
                                         </div>
                                         <div class="col-md-6">
@@ -731,10 +744,34 @@
     <!-- AOS Animation Library -->
     <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
     
+    <!-- Firebase SDK -->
+    <script type="module">
+      // Import the functions you need from the SDKs you need
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+      import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+      import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+      
+      // Your web app's Firebase configuration
+      const firebaseConfig = {
+        apiKey: "AIzaSyAPK6cVmWAw-c55-npz1R5_VGGyFKYQ3gw",
+        authDomain: "preciousmeals-a7d59.firebaseapp.com",
+        projectId: "preciousmeals-a7d59",
+        storageBucket: "preciousmeals-a7d59.firebasestorage.app",
+        messagingSenderId: "464759516900",
+        appId: "1:464759516900:web:9a600a65fb1363f2b6c6f1",
+        measurementId: "G-L0YMPEQ520"
+      };
+
+      // Initialize Firebase - this is just to ensure Firebase is initialized
+      // The actual integration is in the firebase-config.js file
+      const app = initializeApp(firebaseConfig);
+    </script>
+    
     <!-- Custom JavaScript -->
-    <script src="./js/auth.js"></script>
-    <script src="./js/booking.js"></script>
-    <script src="./js/reviews.js"></script>
+    <script type="module" src="./js/firebase-config.js"></script>
+    <script type="module" src="./js/auth.js"></script>
+    <script type="module" src="./js/booking.js"></script>
+    <script type="module" src="./js/reviews.js"></script>
 
     <script>
         // Initialize AOS animations
@@ -1080,6 +1117,193 @@
                 }
             }
         });
+    </script>
+    
+    <!-- Firebase Scripts -->
+    <script type="module">
+      // Import Firebase config from the existing firebase-config.js
+      import { 
+          db, 
+          collection, 
+          addDoc,
+          getDocs,
+          query,
+          where,
+          orderBy
+      } from './js/firebase-config.js';
+
+      // Form submission
+      document.getElementById("bookingForm").addEventListener("submit", async function(e) {
+        e.preventDefault();
+
+        const form = e.target;
+        const eventType = form.eventType.value;
+        const eventDate = form.eventDate.value;
+        const guests = parseInt(form.guests.value);
+        
+        try {
+          await addDoc(collection(db, "bookings"), {
+            "Event Type": eventType,
+            "Event Date": new Date(eventDate),
+            "Guests": guests,
+            "Actions": false,
+            "Status": true,
+            "Time": new Date()
+          });
+          
+          // Show success message
+          const successMessage = document.getElementById('bookingSuccessMessage');
+          if (successMessage) {
+            successMessage.classList.remove('d-none');
+            successMessage.scrollIntoView({ behavior: 'smooth' });
+          }
+          
+          form.reset();
+          
+          // If we have additional fields, get them and reset
+          const nameInput = document.getElementById('fullName');
+          const emailInput = document.getElementById('email');
+          const phoneInput = document.getElementById('phone');
+          
+          if (nameInput) nameInput.value = '';
+          if (emailInput) emailInput.value = '';
+          if (phoneInput) phoneInput.value = '';
+          
+          // Add a timeout to hide the success message after a few seconds
+          setTimeout(() => {
+            if (successMessage) {
+              successMessage.classList.add('d-none');
+            }
+          }, 5000);
+        } catch (error) {
+          console.error("Error adding document: ", error);
+          alert("Failed to submit booking.");
+        }
+      });
+      
+      // Function to show My Bookings section and load data
+      async function loadMyBookings() {
+        // Get the My Bookings container and booking section
+        const myBookingsContainer = document.getElementById('myBookingsContainer');
+        const bookingSection = document.getElementById('booking');
+        
+        // Show the My Bookings section and hide the booking form
+        if (myBookingsContainer && bookingSection) {
+          myBookingsContainer.classList.remove('d-none');
+          bookingSection.classList.add('d-none');
+        }
+        
+        // Get reference to bookings list and no bookings message
+        const bookingsList = document.getElementById('bookingsList');
+        const noBookingsMessage = document.getElementById('noBookingsMessage');
+        
+        if (!bookingsList) return;
+        
+        try {
+          // Clear existing bookings
+          bookingsList.innerHTML = '';
+          
+          // Get all bookings from Firebase
+          const bookingsRef = collection(db, "bookings");
+          const q = query(bookingsRef, orderBy("Time", "desc"));
+          const querySnapshot = await getDocs(q);
+          
+          let hasBookings = false;
+          
+          // Process each booking
+          querySnapshot.forEach((doc) => {
+            hasBookings = true;
+            const booking = doc.data();
+            const bookingId = doc.id;
+            
+            // Format date nicely
+            let eventDate = "N/A";
+            if (booking["Event Date"] && booking["Event Date"].toDate) {
+              eventDate = booking["Event Date"].toDate().toLocaleDateString();
+            }
+            
+            // Format time nicely
+            let bookingTime = "N/A";
+            if (booking["Time"] && booking["Time"].toDate) {
+              bookingTime = booking["Time"].toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            }
+            
+            // Create booking row
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${eventDate}</td>
+              <td>${booking["Event Type"] || "N/A"}</td>
+              <td>${bookingTime}</td>
+              <td>${booking["Guests"] || "N/A"}</td>
+              <td>
+                <span class="badge ${booking["Status"] ? "bg-success" : "bg-warning"}">
+                  ${booking["Status"] ? "Confirmed" : "Pending"}
+                </span>
+              </td>
+              <td>
+                <button class="btn btn-sm btn-outline-primary view-booking-btn" data-booking-id="${bookingId}">
+                  <i class="bi bi-eye"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger cancel-booking-btn" data-booking-id="${bookingId}">
+                  <i class="bi bi-x-circle"></i>
+                </button>
+              </td>
+            `;
+            
+            bookingsList.appendChild(row);
+          });
+          
+          // Show or hide the no bookings message
+          if (noBookingsMessage) {
+            if (hasBookings) {
+              noBookingsMessage.classList.add('d-none');
+            } else {
+              noBookingsMessage.classList.remove('d-none');
+            }
+          }
+          
+          // Add event listeners for the view and cancel buttons
+          document.querySelectorAll('.view-booking-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+              const bookingId = this.getAttribute('data-booking-id');
+              // Implement view booking details functionality
+              console.log('View booking:', bookingId);
+            });
+          });
+          
+          document.querySelectorAll('.cancel-booking-btn').forEach(btn => {
+            btn.addEventListener('click', async function() {
+              const bookingId = this.getAttribute('data-booking-id');
+              if (confirm('Are you sure you want to cancel this booking?')) {
+                // Implement cancel booking functionality
+                console.log('Cancel booking:', bookingId);
+              }
+            });
+          });
+          
+        } catch (error) {
+          console.error('Error loading bookings:', error);
+          alert('Failed to load bookings.');
+        }
+      }
+      
+      // Add event listener to "My Bookings" button in the navbar if it exists
+      const myBookingsBtn = document.querySelector('a[href="#myBookings"]');
+      if (myBookingsBtn) {
+        myBookingsBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          loadMyBookings();
+        });
+      }
+      
+      // Add event listener to "Back to Booking" button
+      const backToBookingBtn = document.getElementById('backToBookingBtn');
+      if (backToBookingBtn) {
+        backToBookingBtn.addEventListener('click', function() {
+          document.getElementById('myBookingsContainer').classList.add('d-none');
+          document.getElementById('booking').classList.remove('d-none');
+        });
+      }
     </script>
 </body>
 </html>

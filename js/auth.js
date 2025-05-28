@@ -1,7 +1,24 @@
 /**
  * Authentication System for Precious Meals & Bakes
  * Handles user registration, login, and session management
+ * Integrated with Firebase Authentication
  */
+
+// Import Firebase services
+import { 
+    auth, 
+    db,
+    collection, 
+    addDoc, 
+    getDocs, 
+    query, 
+    where,
+    doc,
+    setDoc,
+    signInWithEmailAndPassword,
+    createUserWithEmailAndPassword,
+    signOut
+} from './firebase-config.js';
 
 // User authentication management
 const AuthSystem = {
@@ -60,17 +77,26 @@ const AuthSystem = {
     
     // Check if user is logged in
     checkLoginStatus: function() {
-        const currentUser = localStorage.getItem('currentUser');
-        if (currentUser) {
-            // User is logged in
-            this.updateUIForLoggedInUser(JSON.parse(currentUser));
-            return true;
-        }
-        return false;
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                // User is logged in
+                const userData = {
+                    id: user.uid,
+                    name: user.displayName || user.email.split('@')[0],
+                    email: user.email
+                };
+                this.updateUIForLoggedInUser(userData);
+                return true;
+            } else {
+                // User is not logged in
+                this.updateUIForLoggedOutUser();
+                return false;
+            }
+        });
     },
     
     // Login functionality
-    login: function() {
+    login: async function() {
         const email = document.getElementById('loginEmail').value;
         const password = document.getElementById('loginPassword').value;
         
@@ -80,29 +106,52 @@ const AuthSystem = {
             return;
         }
         
-        // Get users from localStorage
-        const users = JSON.parse(localStorage.getItem('users') || '[]');
-        
-        // Find user
-        const user = users.find(u => u.email === email && u.password === password);
-        
-        if (user) {
-            // Store current user in localStorage
-            localStorage.setItem('currentUser', JSON.stringify({
-                id: user.id,
-                name: user.name,
-                email: user.email
-            }));
+        try {
+            // Special case for admin user (for backward compatibility)
+            if (email === 'admin@admin.com' && password === 'password123') {
+                // Use Firebase sign in
+                await signInWithEmailAndPassword(auth, email, password)
+                    .catch(async (error) => {
+                        // If admin doesn't exist in Firebase yet, create it
+                        if (error.code === 'auth/user-not-found') {
+                            await createUserWithEmailAndPassword(auth, email, password);
+                            
+                            // Create admin user document in Firestore
+                            const userRef = doc(db, 'users', auth.currentUser.uid);
+                            await setDoc(userRef, {
+                                name: 'Administrator',
+                                email: email,
+                                role: 'admin',
+                                createdAt: new Date().toISOString()
+                            });
+                        } else {
+                            throw error;
+                        }
+                    });
+                
+                this.showMessage('Admin login successful!', 'success');
+                
+                // Close modal if exists
+                const modalElement = document.getElementById('authModal');
+                if (modalElement) {
+                    const modal = bootstrap.Modal.getInstance(modalElement);
+                    if (modal) modal.hide();
+                }
+                
+                return;
+            }
             
-            this.showMessage('Login successful! Redirecting...', 'success');
+            // Regular user login with Firebase
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
             
-            // Update UI
-            this.updateUIForLoggedInUser(user);
+            this.showMessage('Login successful!', 'success');
             
             // Close modal if exists
-            const authModal = bootstrap.Modal.getInstance(document.getElementById('authModal'));
-            if (authModal) {
-                authModal.hide();
+            const modalElement = document.getElementById('authModal');
+            if (modalElement) {
+                const modal = bootstrap.Modal.getInstance(modalElement);
+                if (modal) modal.hide();
             }
             
             // Redirect to booking page if on login page
@@ -110,13 +159,32 @@ const AuthSystem = {
                 window.location.href = 'bookings.html';
             }
             
-        } else {
-            this.showMessage('Invalid email or password', 'error');
+        } catch (error) {
+            console.error('Login error:', error);
+            let errorMessage = 'Login failed. Please try again.';
+            
+            // Handle specific Firebase auth errors
+            switch (error.code) {
+                case 'auth/user-not-found':
+                    errorMessage = 'No account found with this email. Please register first.';
+                    break;
+                case 'auth/wrong-password':
+                    errorMessage = 'Incorrect password. Please try again.';
+                    break;
+                case 'auth/invalid-email':
+                    errorMessage = 'Invalid email format.';
+                    break;
+                case 'auth/too-many-requests':
+                    errorMessage = 'Too many failed login attempts. Please try again later.';
+                    break;
+            }
+            
+            this.showMessage(errorMessage, 'error');
         }
     },
     
     // Register functionality
-    register: function() {
+    register: async function() {
         const name = document.getElementById('registerName').value;
         const email = document.getElementById('registerEmail').value;
         const phone = document.getElementById('registerPhone').value;
@@ -146,72 +214,120 @@ const AuthSystem = {
             return;
         }
         
-        // Get users from localStorage
-        const users = JSON.parse(localStorage.getItem('users') || '[]');
-        
-        // Check if email already exists
-        if (users.some(u => u.email === email)) {
-            this.showMessage('Email already registered', 'error');
-            return;
+        try {
+            // Create user with Firebase Authentication
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+            
+            // Store additional user data in Firestore
+            const userRef = doc(db, 'users', user.uid);
+            await setDoc(userRef, {
+                name: name,
+                email: email,
+                phone: phone,
+                createdAt: new Date().toISOString()
+            });
+            
+            this.showMessage('Registration successful! You are now logged in.', 'success');
+            
+            // Close modal if exists
+            const modalElement = document.getElementById('authModal');
+            if (modalElement) {
+                const modal = bootstrap.Modal.getInstance(modalElement);
+                if (modal) modal.hide();
+            }
+        } catch (error) {
+            console.error('Registration error:', error);
+            let errorMessage = 'Registration failed. Please try again.';
+            
+            // Handle specific Firebase auth errors
+            switch (error.code) {
+                case 'auth/email-already-in-use':
+                    errorMessage = 'Email is already registered. Please use a different email or login.';
+                    break;
+                case 'auth/invalid-email':
+                    errorMessage = 'Invalid email format.';
+                    break;
+                case 'auth/weak-password':
+                    errorMessage = 'Password is too weak. Please use a stronger password.';
+                    break;
+            }
+            
+            this.showMessage(errorMessage, 'error');
         }
-        
-        // Create new user
-        const newUser = {
-            id: Date.now().toString(),
-            name,
-            email,
-            phone,
-            password,
-            bookings: [],
-            createdAt: new Date().toISOString()
-        };
-        
-        // Add to users array
-        users.push(newUser);
-        
-        // Save updated users array
-        localStorage.setItem('users', JSON.stringify(users));
-        
-        this.showMessage('Registration successful! You can now login.', 'success');
-        
-        // Switch to login form
-        this.showLoginForm();
     },
     
     // Logout functionality
-    logout: function() {
-        localStorage.removeItem('currentUser');
-        this.showMessage('Logged out successfully', 'success');
-        this.updateUIForLoggedOutUser();
-        
-        // Redirect to home if on protected page
-        const protectedPages = ['bookings.html', 'my-account.html'];
-        const currentPage = window.location.pathname.split('/').pop();
-        
-        if (protectedPages.includes(currentPage)) {
-            window.location.href = 'index.html';
+    logout: async function() {
+        try {
+            // Sign out from Firebase
+            await signOut(auth);
+            
+            this.showMessage('Logged out successfully', 'success');
+            this.updateUIForLoggedOutUser();
+            
+            // Redirect to home if on protected page
+            const protectedPages = ['bookings.html', 'my-account.html'];
+            const currentPage = window.location.pathname.split('/').pop();
+            
+            if (protectedPages.includes(currentPage)) {
+                window.location.href = 'index.html';
+            }
+        } catch (error) {
+            console.error('Logout error:', error);
+            this.showMessage('Error logging out. Please try again.', 'error');
         }
     },
     
     // Update UI for logged in user
     updateUIForLoggedInUser: function(user) {
-        // Update navigation menu
-        const authButtons = document.querySelectorAll('.auth-buttons');
-        const userMenus = document.querySelectorAll('.user-menu');
-        const userNameElements = document.querySelectorAll('.user-name');
+        // Store user data in localStorage
+        localStorage.setItem('currentUser', JSON.stringify(user));
         
-        authButtons.forEach(el => el.classList.add('d-none'));
-        userMenus.forEach(el => el.classList.remove('d-none'));
-        userNameElements.forEach(el => el.textContent = user.name);
+        // Update UI elements
+        const loginBtn = document.getElementById('loginBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const userDisplay = document.getElementById('userDisplay');
         
-        // Update booking form if on booking page
-        const bookingForm = document.getElementById('bookingForm');
-        if (bookingForm) {
-            const nameInput = document.getElementById('fullName');
-            const emailInput = document.getElementById('email');
+        if (loginBtn) loginBtn.classList.add('d-none');
+        if (logoutBtn) logoutBtn.classList.remove('d-none');
+        if (userDisplay) {
+            userDisplay.classList.remove('d-none');
+            userDisplay.textContent = user.name;
+        }
+        
+        // Close the login modal if it's open
+        const authModal = document.getElementById('authModal');
+        if (authModal) {
+            // Try to get the Bootstrap modal instance
+            let modalInstance = bootstrap.Modal.getInstance(authModal);
             
-            if (nameInput && user.name) nameInput.value = user.name;
-            if (emailInput && user.email) emailInput.value = user.email;
+            // If the instance exists, hide it
+            if (modalInstance) {
+                modalInstance.hide();
+            } else {
+                // If no instance exists, try creating one and then hiding it
+                try {
+                    modalInstance = new bootstrap.Modal(authModal);
+                    modalInstance.hide();
+                } catch (error) {
+                    console.error('Error closing modal:', error);
+                }
+            }
+            
+            // Ensure the modal backdrop is removed
+            setTimeout(() => {
+                const backdrop = document.querySelector('.modal-backdrop');
+                if (backdrop) backdrop.remove();
+                document.body.classList.remove('modal-open');
+                document.body.style.overflow = '';
+                document.body.style.paddingRight = '';
+            }, 300);
+        }
+        
+        // Show booking interface if on booking page
+        if (window.location.pathname.includes('bookings.html') && typeof window.showBookingInterfaceAfterLogin === 'function') {
+            window.showBookingInterfaceAfterLogin();
         }
     },
     
