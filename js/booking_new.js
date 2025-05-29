@@ -110,7 +110,7 @@ const BookingSystem = {
         });
     },
     
-    // Add preset bookings to Firebase for demonstration
+    // Add preset bookings to database for demonstration
     initializePresetBookings: async function() {
         try {
             // Check if we already have bookings in local database
@@ -211,8 +211,8 @@ const BookingSystem = {
     // Format date as YYYY-MM-DD
     formatDate: function(date) {
         const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const day = date.getDate().toString().padStart(2, '0');
         return `${year}-${month}-${day}`;
     },
     
@@ -399,28 +399,11 @@ const BookingSystem = {
                 this.updateAvailabilityMessage(true, isDayFree);
             } else {
                 // No available slots
-                const option = document.createElement('option');
-                option.value = '';
-                option.textContent = 'No available slots for this date';
-                option.disabled = true;
-                option.selected = true;
-                timeSlotSelect.appendChild(option);
-                
-                // Update availability message
-                this.updateAvailabilityMessage(false);
-            }
-        } catch (error) {
-            console.error('Error updating time slots:', error);
-            timeSlotSelect.innerHTML = '';
-            const errorOption = document.createElement('option');
-            errorOption.value = '';
-            errorOption.textContent = 'Error loading slots. Please try again.';
-            errorOption.disabled = true;
-            errorOption.selected = true;
-            timeSlotSelect.appendChild(errorOption);
-        }
-    },
-    
+                const noSlotsOption = document.createElement('option');
+                noSlotsOption.value = '';
+                noSlotsOption.textContent = 'No available slots';
+                noSlotsOption.disabled = true;
+                timeSlotSelect.appendChild(noSlotsOption);
                 
                 // Update availability message
                 this.updateAvailabilityMessage(false);
@@ -464,7 +447,7 @@ const BookingSystem = {
             message.classList.add('alert-warning');
             message.innerHTML = `
                 <i class="bi bi-calendar-date me-2"></i>
-                <strong>Select a Date:</strong> Please choose an event date to see available time slots.
+                <strong>Date Required:</strong> Please select an event date.
             `;
             message.classList.remove('d-none');
             return;
@@ -546,7 +529,7 @@ const BookingSystem = {
         try {
             // Check date availability again (in case someone booked while form was being filled)
             const availableSlots = await this.getAvailableTimeSlots(eventDate);
-            if (!availableSlots.includes(timeSlot)) {
+            if (!availableSlots.includes(timeSlot) && timeSlot !== 'Full Day') {
                 alert('Sorry, this time slot is no longer available. Please select another time.');
                 this.updateTimeSlots(eventDate);
                 return;
@@ -574,7 +557,7 @@ const BookingSystem = {
                 createdAt: new Date().toISOString()
             };
             
-            // Save booking to Firebase
+            // Save booking to database
             const bookingsRef = collection(this.config.collections.bookings);
             const docRef = await addDoc(bookingsRef, newBooking);
             console.log('Booking added with ID:', docRef.id);
@@ -610,30 +593,18 @@ const BookingSystem = {
                 const dateInput = document.getElementById('eventDate');
                 if (dateInput) {
                     // Reset date picker
-                    dateInput.value = '';
-                } else {
-                    alert('Booking successful! We will contact you shortly to confirm your booking.');
+                    const today = new Date();
+                    const minDate = new Date(today);
+                    minDate.setDate(today.getDate() + this.config.minDaysInAdvance);
+                    dateInput.value = this.formatDate(minDate);
+                    this.updateTimeSlots(dateInput.value);
                 }
+            } else {
+                alert('Booking successful! We will contact you shortly to confirm your booking.');
             }
-            
-            // Immediately update the calendar view
-            if (typeof window.initializeBookingsCalendar === 'function') {
-                window.initializeBookingsCalendar();
-            }
-            
-            // Immediately update the bookings table
-            this.loadUserBookings();
-            
-            // Update admin view if admin is logged in
-            if (user.email === 'admin@admin.com' && typeof window.loadAllBookingsForAdmin === 'function') {
-                window.loadAllBookingsForAdmin();
-            }
-            
-            // Update available time slots
-            await this.updateTimeSlots(eventDate);
         } catch (error) {
             console.error('Error submitting booking:', error);
-            alert('There was an error submitting your booking. Please try again.');
+            alert('An error occurred while submitting your booking. Please try again.');
         } finally {
             // Reset submit button
             const submitButton = document.querySelector('#bookingForm button[type="submit"]');
@@ -648,247 +619,225 @@ const BookingSystem = {
     loadUserBookings: async function() {
         // Check if user is logged in
         const currentUser = localStorage.getItem('currentUser');
-        if (!currentUser) {
-            // Show login modal
-            const authModal = new bootstrap.Modal(document.getElementById('authModal'));
-            authModal.show();
-            return;
-        }
+        if (!currentUser) return;
         
         const user = JSON.parse(currentUser);
         const bookingsList = document.getElementById('bookingsList');
-        if (!bookingsList) return;
+        const noBookingsMessage = document.getElementById('noBookingsMessage');
         
-        // Show loading indicator
-        bookingsList.innerHTML = `
-            <tr>
-                <td colspan="6" class="text-center">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <p class="mt-2">Loading your bookings...</p>
-                </td>
-            </tr>
-        `;
+        if (!bookingsList || !noBookingsMessage) return;
         
         try {
-            // Get user bookings from Firebase
+            // Show loading indicator
+            bookingsList.innerHTML = `
+                <tr>
+                    <td colspan="6" class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Loading your bookings...</p>
+                    </td>
+                </tr>
+            `;
+            
+            // Get user bookings from database
             const bookingsRef = collection(this.config.collections.bookings);
-            let q;
-            
-            // If admin, show all bookings
-            if (user.email === 'admin@admin.com') {
-                q = query(bookingsRef, orderBy('date', 'desc'));
-            } else {
-                // Otherwise, show only user's bookings
-                q = query(bookingsRef, where('userId', '==', user.id), orderBy('date', 'desc'));
-            }
-            
+            const q = query(
+                bookingsRef, 
+                where("userEmail", "==", user.email),
+                orderBy("createdAt", "desc")
+            );
             const querySnapshot = await getDocs(q);
             
-            // Clear loading indicator
+            // Clear previous bookings
             bookingsList.innerHTML = '';
             
-            // If no bookings found
+            // Show appropriate message or bookings
             if (querySnapshot.empty) {
-                bookingsList.innerHTML = `
-                    <tr>
-                        <td colspan="6" class="text-center">
-                            <p class="my-3">You don't have any bookings yet.</p>
-                            <button id="createBookingBtn" class="btn btn-primary">
-                                <i class="bi bi-plus-circle me-2"></i>Create a Booking
-                            </button>
-                        </td>
-                    </tr>
-                `;
+                noBookingsMessage.classList.remove('d-none');
+                document.querySelector('.bookings-table').classList.add('d-none');
+            } else {
+                noBookingsMessage.classList.add('d-none');
+                document.querySelector('.bookings-table').classList.remove('d-none');
                 
-                // Add event listener to create booking button
-                const createBookingBtn = document.getElementById('createBookingBtn');
-                if (createBookingBtn) {
-                    createBookingBtn.addEventListener('click', () => {
-                        document.getElementById('myBookingsContainer').classList.add('d-none');
-                        document.getElementById('booking').classList.remove('d-none');
+                // Add each booking to the table
+                querySnapshot.forEach((doc) => {
+                    const booking = doc.data();
+                    booking.id = doc.id; // Add document ID to booking object
+                    
+                    const row = document.createElement('tr');
+                    
+                    // Format date for display
+                    const formattedDate = new Date(booking.date).toLocaleDateString('en-US', {
+                        weekday: 'short',
+                        month: 'short', 
+                        day: 'numeric',
+                        year: 'numeric'
                     });
-                }
-                
-                return;
-            }
-            
-            // Add bookings to table
-            querySnapshot.forEach((doc) => {
-                const booking = doc.data();
-                const bookingId = doc.id;
-                
-                // Format date for display
-                const formattedDate = new Date(booking.date).toLocaleDateString('en-US', {
-                    weekday: 'short',
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric'
-                });
-                
-                // Create booking row
-                const row = document.createElement('tr');
-                
-                // Status badge color
-                let statusBadgeClass = 'bg-warning';
-                if (booking.status === 'confirmed') statusBadgeClass = 'bg-success';
-                if (booking.status === 'cancelled') statusBadgeClass = 'bg-danger';
-                
-                // Add booking data to row
-                row.innerHTML = `
-                    <td>${booking.eventType}</td>
-                    <td>${formattedDate}</td>
-                    <td>${booking.timeSlot === 'Full Day' ? 'Full Day' : this.formatTimeSlot(booking.timeSlot)}</td>
-                    <td>${booking.guestCount}</td>
-                    <td><span class="badge ${statusBadgeClass}">${booking.status}</span></td>
-                    <td>
-                        <button class="btn btn-sm btn-primary view-booking" data-booking-id="${bookingId}">
-                            <i class="bi bi-eye"></i>
-                        </button>
-                        ${booking.status === 'pending' ? `
-                            <button class="btn btn-sm btn-danger cancel-booking" data-booking-id="${bookingId}">
-                                <i class="bi bi-x-circle"></i>
+                    
+                    // Status badge color
+                    let statusBadgeClass = '';
+                    switch (booking.status) {
+                        case 'confirmed':
+                            statusBadgeClass = 'bg-success';
+                            break;
+                        case 'pending':
+                            statusBadgeClass = 'bg-warning text-dark';
+                            break;
+                        case 'cancelled':
+                            statusBadgeClass = 'bg-danger';
+                            break;
+                        default:
+                            statusBadgeClass = 'bg-secondary';
+                    }
+                    
+                    // Add booking details to row
+                    row.innerHTML = `
+                        <td>${formattedDate}</td>
+                        <td>${booking.eventType}</td>
+                        <td>${this.formatTimeSlot(booking.timeSlot)}</td>
+                        <td>${booking.guestCount}</td>
+                        <td><span class="badge ${statusBadgeClass}">${booking.status}</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary view-booking" data-id="${booking.id}">
+                                <i class="bi bi-eye"></i>
                             </button>
-                        ` : ''}
-                    </td>
-                `;
+                            ${booking.status !== 'cancelled' ? `
+                            <button class="btn btn-sm btn-outline-danger cancel-booking" data-id="${booking.id}">
+                                <i class="bi bi-x-circle"></i>
+                            </button>` : ''}
+                        </td>
+                    `;
+                    
+                    bookingsList.appendChild(row);
+                });
                 
-                bookingsList.appendChild(row);
-            });
-            
-            // Add event listeners to view and cancel buttons
-            document.querySelectorAll('.view-booking').forEach(button => {
-                button.addEventListener('click', (e) => {
-                    const bookingId = e.currentTarget.getAttribute('data-booking-id');
-                    this.viewBookingDetails(bookingId);
+                // Add event listeners for view and cancel buttons
+                document.querySelectorAll('.view-booking').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const bookingId = e.currentTarget.getAttribute('data-id');
+                        this.viewBookingDetails(bookingId);
+                    });
                 });
-            });
-            
-            document.querySelectorAll('.cancel-booking').forEach(button => {
-                button.addEventListener('click', (e) => {
-                    const bookingId = e.currentTarget.getAttribute('data-booking-id');
-                    this.cancelBooking(bookingId);
+                
+                document.querySelectorAll('.cancel-booking').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        if (confirm('Are you sure you want to cancel this booking?')) {
+                            const bookingId = e.currentTarget.getAttribute('data-id');
+                            this.cancelBooking(bookingId);
+                        }
+                    });
                 });
-            });
+            }
         } catch (error) {
             console.error('Error loading user bookings:', error);
             bookingsList.innerHTML = `
                 <tr>
                     <td colspan="6" class="text-center text-danger">
-                        <i class="bi bi-exclamation-triangle me-2"></i>
-                        Error loading bookings. Please try again later.
+                        <i class="bi bi-exclamation-circle-fill me-2"></i>
+                        Error loading bookings. Please try again.
                     </td>
                 </tr>
             `;
         }
     },
     
-    // Helper function to format time slot for display
-    formatTimeSlot: function(timeSlot) {
-        if (timeSlot === 'Full Day') return 'Full Day';
+    // Cancel a booking
+    cancelBooking: async function(bookingId) {
+        if (!confirm('Are you sure you want to cancel this booking?')) return;
         
-        const [start, end] = timeSlot.split('-');
-        const formattedStart = this.formatTime(start.trim());
-        const formattedEnd = this.formatTime(end.trim());
-        
-        return `${formattedStart} - ${formattedEnd}`;
-    },
-    
-    // Format time (convert 24h to 12h format)
-    formatTime: function(time) {
-        const [hours, minutes] = time.split(':');
-        const hour = parseInt(hours, 10);
-        const ampm = hour >= 12 ? 'PM' : 'AM';
-        const formattedHour = hour % 12 || 12;
-        
-        return `${formattedHour}:${minutes} ${ampm}`;
+        try {
+            const docRef = doc(this.config.collections.bookings, bookingId);
+            
+            // Update booking status
+            await updateDoc(docRef, {
+                status: 'cancelled'
+            });
+            
+            // Reload bookings
+            this.loadUserBookings();
+            
+            alert('Booking cancelled successfully');
+        } catch (error) {
+            console.error('Error cancelling booking:', error);
+            alert('An error occurred while cancelling your booking. Please try again.');
+        }
     },
     
     // View booking details
     viewBookingDetails: async function(bookingId) {
         try {
-            const docRef = doc(db, this.config.collections.bookings, bookingId);
+            // Get booking from database
+            const docRef = doc(this.config.collections.bookings, bookingId);
             const docSnap = await getDoc(docRef);
             
-            if (docSnap.exists()) {
-                const booking = docSnap.data();
-                
-                // Format date for display
-                const formattedDate = new Date(booking.date).toLocaleDateString('en-US', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                });
-                
-                // Create modal content
-                const modalContent = `
-                    <div class="modal-header bg-primary text-white">
-                        <h5 class="modal-title">Booking Details</h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <p><strong>Event Type:</strong> ${booking.eventType}</p>
-                                <p><strong>Date:</strong> ${formattedDate}</p>
-                                <p><strong>Time:</strong> ${booking.timeSlot === 'Full Day' ? 'Full Day' : this.formatTimeSlot(booking.timeSlot)}</p>
-                                <p><strong>Guests:</strong> ${booking.guestCount}</p>
-                            </div>
-                            <div class="col-md-6">
-                                <p><strong>Status:</strong> <span class="badge ${booking.status === 'confirmed' ? 'bg-success' : booking.status === 'cancelled' ? 'bg-danger' : 'bg-warning'}">${booking.status}</span></p>
-                                <p><strong>Booking ID:</strong> ${bookingId}</p>
-                                <p><strong>Created:</strong> ${new Date(booking.createdAt).toLocaleString()}</p>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-12">
-                                <p><strong>Special Requests:</strong></p>
-                                <p class="border p-2 rounded">${booking.specialRequests || 'None'}</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        ${booking.status === 'pending' ? `
-                            <button type="button" class="btn btn-danger" id="cancelBookingBtn" data-booking-id="${bookingId}">
-                                <i class="bi bi-x-circle me-2"></i>Cancel Booking
-                            </button>
-                        ` : ''}
-                    </div>
-                `;
-                
-                // Create and show modal
-                const modalElement = document.getElementById('bookingDetailsModal') || this.createBookingDetailsModal();
-                modalElement.querySelector('.modal-content').innerHTML = modalContent;
-                
-                const modal = new bootstrap.Modal(modalElement);
-                modal.show();
-                
-                // Add event listener to cancel button
-                const cancelBtn = document.getElementById('cancelBookingBtn');
-                if (cancelBtn) {
-                    cancelBtn.addEventListener('click', () => {
-                        modal.hide();
-                        this.cancelBooking(bookingId);
-                    });
-                }
-            } else {
-                console.error('Booking not found');
-                alert('Booking not found. It may have been deleted.');
+            if (!docSnap.exists()) {
+                alert('Booking not found');
+                return;
             }
+            
+            const booking = docSnap.data();
+            booking.id = docSnap.id; // Add document ID to booking object
+            
+            // Create booking details modal if it doesn't exist
+            this.createBookingDetailsModal();
+            
+            // Display booking details in modal
+            const modal = document.getElementById('bookingDetailsModal');
+            if (!modal) return;
+            
+            // Format date
+            const formattedDate = new Date(booking.date).toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            
+            // Set modal content
+            document.getElementById('modalBookingId').textContent = booking.id;
+            document.getElementById('modalEventType').textContent = booking.eventType;
+            document.getElementById('modalEventDate').textContent = formattedDate;
+            document.getElementById('modalEventTime').textContent = this.formatTimeSlot(booking.timeSlot);
+            document.getElementById('modalGuestCount').textContent = booking.guestCount;
+            document.getElementById('modalSpecialRequests').textContent = booking.specialRequests || 'None';
+            document.getElementById('modalStatus').textContent = booking.status.toUpperCase();
+            
+            // Set status color
+            const statusBadge = document.getElementById('modalStatusBadge');
+            statusBadge.className = 'badge';
+            
+            // Add appropriate status class
+            switch (booking.status) {
+                case 'confirmed':
+                    statusBadge.classList.add('bg-success');
+                    break;
+                case 'pending':
+                    statusBadge.classList.add('bg-warning', 'text-dark');
+                    break;
+                case 'cancelled':
+                    statusBadge.classList.add('bg-danger');
+                    break;
+                default:
+                    statusBadge.classList.add('bg-secondary');
+            }
+            
+            // Show modal
+            const bookingModal = new bootstrap.Modal(modal);
+            bookingModal.show();
         } catch (error) {
             console.error('Error viewing booking details:', error);
-            alert('Error viewing booking details. Please try again later.');
+            alert('An error occurred while loading booking details. Please try again.');
         }
     },
     
     // Create booking details modal if it doesn't exist
     createBookingDetailsModal: function() {
+        if (document.getElementById('bookingDetailsModal')) return;
+        
         const modalElement = document.createElement('div');
-        modalElement.id = 'bookingDetailsModal';
         modalElement.className = 'modal fade';
+        modalElement.id = 'bookingDetailsModal';
         modalElement.tabIndex = '-1';
         modalElement.setAttribute('aria-labelledby', 'bookingDetailsModalLabel');
         modalElement.setAttribute('aria-hidden', 'true');
@@ -896,370 +845,51 @@ const BookingSystem = {
         modalElement.innerHTML = `
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
-                    <!-- Content will be dynamically inserted here -->
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title" id="bookingDetailsModalLabel">Booking Details</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="small text-muted mb-1">Booking ID</p>
+                        <p id="modalBookingId" class="mb-3"></p>
+                        
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <p class="small text-muted mb-1">Event Type</p>
+                                <p id="modalEventType" class="mb-0 fw-bold"></p>
+                            </div>
+                            <div class="col-6 text-end">
+                                <p class="small text-muted mb-1">Status</p>
+                                <p class="mb-0"><span id="modalStatusBadge" class="badge"><span id="modalStatus"></span></span></p>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <p class="small text-muted mb-1">Date</p>
+                                <p id="modalEventDate" class="mb-0"></p>
+                            </div>
+                            <div class="col-6">
+                                <p class="small text-muted mb-1">Time</p>
+                                <p id="modalEventTime" class="mb-0"></p>
+                            </div>
+                        </div>
+                        
+                        <p class="small text-muted mb-1">Number of Guests</p>
+                        <p id="modalGuestCount" class="mb-3"></p>
+                        
+                        <p class="small text-muted mb-1">Special Requests</p>
+                        <p id="modalSpecialRequests" class="mb-0"></p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
                 </div>
             </div>
         `;
         
         document.body.appendChild(modalElement);
-        return modalElement;
-    },
-    
-    // Cancel booking
-    cancelBooking: async function(bookingId) {
-        if (!confirm('Are you sure you want to cancel this booking? This action cannot be undone.')) {
-            return;
-        }
-        
-        try {
-            const docRef = doc(db, this.config.collections.bookings, bookingId);
-            await updateDoc(docRef, {
-                status: 'cancelled',
-                updatedAt: new Date().toISOString()
-            });
-            
-            alert('Booking cancelled successfully.');
-            
-            // Reload bookings
-            this.loadUserBookings();
-            
-            // Update calendar if available
-            if (typeof window.initializeBookingsCalendar === 'function') {
-                window.initializeBookingsCalendar();
-            }
-        } catch (error) {
-            console.error('Error cancelling booking:', error);
-            alert('Error cancelling booking. Please try again later.');
-        }
-    },
-    
-    // Submit booking form
-    submitBookingForm: async function() {
-        // Check if user is logged in
-        const currentUser = localStorage.getItem('currentUser');
-        if (!currentUser) {
-            // Show login modal
-            const authModal = new bootstrap.Modal(document.getElementById('authModal'));
-            authModal.show();
-            return;
-        }
-        
-        // Get form data
-        const fullName = document.getElementById('fullName').value;
-        const email = document.getElementById('email').value;
-        const phone = document.getElementById('phone').value;
-        const eventDate = document.getElementById('eventDate').value;
-        const timeSlot = document.getElementById('timeSlot').value;
-        const eventType = document.getElementById('eventType').value;
-        const guestCount = document.getElementById('guestCount').value;
-        const specialRequests = document.getElementById('specialRequests').value;
-        
-        // Validate form data
-        if (!fullName || !email || !phone || !eventDate || !timeSlot || !eventType || !guestCount) {
-            alert('Please fill all required fields');
-            return;
-        }
-        
-        try {
-            // Check date availability again (in case someone booked while form was being filled)
-            const availableSlots = await this.getAvailableTimeSlots(eventDate);
-            if (!availableSlots.includes(timeSlot)) {
-                alert('Sorry, this time slot is no longer available. Please select another time.');
-                this.updateTimeSlots(eventDate);
-                return;
-            }
-            
-            // Show loading indicator
-            const submitButton = document.querySelector('#bookingForm button[type="submit"]');
-            const originalButtonText = submitButton.innerHTML;
-            submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Submitting...';
-            submitButton.disabled = true;
-            
-            // Create booking object
-            const newBooking = {
-                userId: user.id,
-                userName: fullName,
-                email: email,
-                phone: phone,
-                date: eventDate,
-                timeSlot: timeSlot,
-                eventType: eventType,
-                guestCount: parseInt(guestCount),
-                specialRequests: specialRequests || '',
-                status: 'pending',
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
-            };
-
-            // Save booking to Firebase
-            const bookingsRef = collection(this.config.collections.bookings);
-            const docRef = await addDoc(bookingsRef, newBooking);
-            console.log('Booking added with ID:', docRef.id);
-            
-            // Show success message and reset form
-            const successMessage = document.getElementById('bookingSuccessMessage');
-        if (successMessage) {
-            successMessage.classList.remove('d-none');
-            window.scrollTo(0, 0);
-            
-            // Reset form
-            document.getElementById('bookingForm').reset();
-            
-            // Pre-fill user data again
-            document.getElementById('fullName').value = user.name;
-            document.getElementById('email').value = user.email;
-            
-            // Hide success message after 5 seconds
-            setTimeout(() => {
-                successMessage.classList.add('d-none');
-            }, 5000);
-        } else {
-            alert('Booking successful! We will contact you shortly to confirm your booking.');
-        }
-        
-        // Immediately update the calendar view
-        if (typeof window.initializeBookingsCalendar === 'function') {
-            window.initializeBookingsCalendar();
-        }
-        
-        // Immediately update the bookings table
-        this.loadUserBookings();
-        
-        // Update admin view if admin is logged in
-        if (user.email === 'admin@admin.com' && typeof window.loadAllBookingsForAdmin === 'function') {
-            window.loadAllBookingsForAdmin();
-        }
-        
-        // Update available time slots
-        await this.updateTimeSlots(eventDate);
-    } catch (error) {
-        console.error('Error submitting booking:', error);
-        alert('There was an error submitting your booking. Please try again.');
-    } finally {
-        // Reset submit button
-        const submitButton = document.querySelector('#bookingForm button[type="submit"]');
-        if (submitButton) {
-            submitButton.innerHTML = '<i class="bi bi-calendar-check me-2"></i>Submit Booking Request';
-            submitButton.disabled = false;
-        }
     }
-},
-
-// Load user bookings for my-bookings page
-loadUserBookings: async function() {
-    // Check if user is logged in
-    const currentUser = localStorage.getItem('currentUser');
-    if (!currentUser) return;
-    
-    const user = JSON.parse(currentUser);
-    const bookingsList = document.getElementById('bookingsList');
-    const noBookingsMessage = document.getElementById('noBookingsMessage');
-    
-    if (!bookingsList || !noBookingsMessage) return;
-    
-    try {
-        // Show loading indicator
-        bookingsList.innerHTML = `
-            <tr>
-                <td colspan="6" class="text-center">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <p class="mt-2">Loading your bookings...</p>
-                </td>
-            </tr>
-        `;
-        
-        // Get user bookings from database
-        const bookingsRef = collection(this.config.collections.bookings);
-        const q = query(
-            bookingsRef, 
-            where("userEmail", "==", user.email),
-            orderBy("createdAt", "desc")
-        );
-        const querySnapshot = await getDocs(q);
-        
-        // Clear previous bookings
-        bookingsList.innerHTML = '';
-        
-        // Show appropriate message or bookings
-        if (querySnapshot.empty) {
-            noBookingsMessage.classList.remove('d-none');
-            document.querySelector('.bookings-table').classList.add('d-none');
-        } else {
-            noBookingsMessage.classList.add('d-none');
-            document.querySelector('.bookings-table').classList.remove('d-none');
-            
-            // Add each booking to the table
-            querySnapshot.forEach((doc) => {
-                const booking = doc.data();
-                booking.id = doc.id; // Add document ID to booking object
-                
-                const row = document.createElement('tr');
-                
-                // Format date for display
-                const formattedDate = new Date(booking.date).toLocaleDateString('en-US', {
-                    weekday: 'short',
-                    month: 'short', 
-                    day: 'numeric',
-                    year: 'numeric'
-                });
-                
-                // Status badge color
-                let statusBadgeClass = '';
-                switch (booking.status) {
-                    case 'confirmed':
-                        statusBadgeClass = 'bg-success';
-                        break;
-                    case 'pending':
-                        statusBadgeClass = 'bg-warning text-dark';
-                        break;
-                    case 'cancelled':
-                        statusBadgeClass = 'bg-danger';
-                        break;
-                    default:
-                        statusBadgeClass = 'bg-secondary';
-                }
-                
-                // Add booking details to row
-                row.innerHTML = `
-                    <td>${formattedDate}</td>
-                    <td>${booking.eventType}</td>
-                    <td>${this.formatTimeSlot(booking.timeSlot)}</td>
-                    <td>${booking.guestCount}</td>
-                    <td><span class="badge ${statusBadgeClass}">${booking.status}</span></td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-primary view-booking" data-id="${booking.id}">
-                            <i class="bi bi-eye"></i>
-                        </button>
-                        ${booking.status !== 'cancelled' ? `
-                        <button class="btn btn-sm btn-outline-danger cancel-booking" data-id="${booking.id}">
-                            <i class="bi bi-x-circle"></i>
-                        </button>` : ''}
-                    </td>
-                `;
-                
-                bookingsList.appendChild(row);
-            });
-            
-            // Add event listeners for view and cancel buttons
-            document.querySelectorAll('.view-booking').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const bookingId = e.currentTarget.getAttribute('data-id');
-                    this.viewBookingDetails(bookingId);
-                });
-            });
-            
-            document.querySelectorAll('.cancel-booking').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    if (confirm('Are you sure you want to cancel this booking?')) {
-                        const bookingId = e.currentTarget.getAttribute('data-id');
-                        this.cancelBooking(bookingId);
-                    }
-                });
-            });
-        }
-    } catch (error) {
-        console.error('Error loading user bookings:', error);
-        bookingsList.innerHTML = `
-            <tr>
-                <td colspan="6" class="text-center text-danger">
-                    <i class="bi bi-exclamation-circle-fill me-2"></i>
-                    Error loading bookings. Please try again.
-                </td>
-            </tr>
-        `;
-    }
-},
-
-// Cancel a booking
-cancelBooking: async function(bookingId) {
-    if (!confirm('Are you sure you want to cancel this booking?')) return;
-    
-    try {
-        const bookingsRef = collection(this.config.collections.bookings);
-        const docRef = doc(this.config.collections.bookings, bookingId);
-        
-        // Update booking status
-        await updateDoc(docRef, {
-            status: 'cancelled'
-        });
-        
-        // Reload bookings
-        this.loadUserBookings();
-        
-        alert('Booking cancelled successfully');
-    } catch (error) {
-        console.error('Error cancelling booking:', error);
-        alert('An error occurred while cancelling your booking. Please try again.');
-    }
-},
-    
-    // View booking details
-viewBookingDetails: async function(bookingId) {
-    try {
-        // Get booking from Firebase
-        const bookingsRef = collection(this.config.collections.bookings);
-        const docRef = doc(this.config.collections.bookings, bookingId);
-        const docSnap = await getDoc(docRef);
-        
-        if (!docSnap.exists()) {
-            alert('Booking not found');
-            return;
-        }
-        
-        const booking = docSnap.data();
-        booking.id = docSnap.id; // Add document ID to booking object
-        
-        // Display booking details in modal
-        const modal = document.getElementById('bookingDetailsModal');
-        if (!modal) return;
-        
-        // Format date
-        const formattedDate = new Date(booking.date).toLocaleDateString('en-US', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
-        
-        // Set modal content
-        document.getElementById('modalBookingId').textContent = booking.id;
-        document.getElementById('modalEventType').textContent = booking.eventType;
-        document.getElementById('modalEventDate').textContent = formattedDate;
-        document.getElementById('modalEventTime').textContent = this.formatTimeSlot(booking.timeSlot);
-        document.getElementById('modalGuestCount').textContent = booking.guestCount;
-        document.getElementById('modalSpecialRequests').textContent = booking.specialRequests || 'None';
-        document.getElementById('modalStatus').textContent = booking.status.toUpperCase();
-        
-        // Set status color
-        const statusBadge = document.getElementById('modalStatusBadge');
-        statusBadge.className = 'badge';
-        
-        // Add appropriate status class
-        switch (booking.status) {
-            case 'confirmed':
-                statusBadge.classList.add('bg-success');
-                break;
-            case 'pending':
-                statusBadge.classList.add('bg-warning', 'text-dark');
-                break;
-            case 'cancelled':
-                statusBadge.classList.add('bg-danger');
-                break;
-            default:
-                statusBadge.classList.add('bg-secondary');
-        }
-        
-        // Show modal
-        const bookingModal = new bootstrap.Modal(modal);
-        bookingModal.show();
-    } catch (error) {
-        console.error('Error viewing booking details:', error);
-        alert('An error occurred while loading booking details. Please try again.');
-    }
-}
 };
 
-// Initialize booking system
-BookingSystem.init();
+export default BookingSystem;
