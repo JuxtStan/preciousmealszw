@@ -77,18 +77,68 @@ const AuthSystem = {
     
     // Check if user is logged in
     checkLoginStatus: function() {
+        console.log('Checking login status...');
+        
+        // First check local storage for cached user data
+        const cachedUser = localStorage.getItem('currentUser');
+        if (cachedUser) {
+            try {
+                const userData = JSON.parse(cachedUser);
+                console.log('Found cached user:', userData);
+                // Temporarily update UI while we verify with Firebase
+                this.updateUIForLoggedInUser(userData);
+            } catch (e) {
+                console.error('Error parsing cached user:', e);
+                localStorage.removeItem('currentUser');
+            }
+        }
+        
+        // Then verify with Firebase (this is async)
         auth.onAuthStateChanged(user => {
             if (user) {
-                // User is logged in
-                const userData = {
-                    id: user.uid,
-                    name: user.displayName || user.email.split('@')[0],
-                    email: user.email
-                };
-                this.updateUIForLoggedInUser(userData);
+                // User is logged in with Firebase
+                console.log('Firebase auth state: User is logged in', user);
+                
+                // Get additional user data from Firestore
+                const userRef = doc(db, 'users', user.uid);
+                getDoc(userRef).then(docSnap => {
+                    let userData;
+                    
+                    if (docSnap.exists()) {
+                        // User data exists in Firestore
+                        const firestoreData = docSnap.data();
+                        userData = {
+                            id: user.uid,
+                            name: firestoreData.name || user.displayName || user.email.split('@')[0],
+                            email: user.email,
+                            phone: firestoreData.phone || ''
+                        };
+                    } else {
+                        // User exists in Auth but not in Firestore
+                        userData = {
+                            id: user.uid,
+                            name: user.displayName || user.email.split('@')[0],
+                            email: user.email
+                        };
+                        
+                        // Create a user document in Firestore
+                        setDoc(userRef, {
+                            name: userData.name,
+                            email: userData.email,
+                            createdAt: new Date().toISOString()
+                        });
+                    }
+                    
+                    // Update UI with fresh data
+                    this.updateUIForLoggedInUser(userData);
+                }).catch(error => {
+                    console.error('Error getting user document:', error);
+                });
+                
                 return true;
             } else {
                 // User is not logged in
+                console.log('Firebase auth state: User is NOT logged in');
                 this.updateUIForLoggedOutUser();
                 return false;
             }
@@ -97,62 +147,116 @@ const AuthSystem = {
     
     // Login functionality
     login: async function() {
+        console.log('Login attempt started');
+        
+        // Disable the login button to prevent multiple submissions
+        const loginBtn = document.querySelector('#loginForm button[type="submit"]');
+        if (loginBtn) {
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Logging in...';
+        }
+        
         const email = document.getElementById('loginEmail').value;
         const password = document.getElementById('loginPassword').value;
         
         // Validate inputs
         if (!email || !password) {
             this.showMessage('Please enter both email and password', 'error');
+            if (loginBtn) {
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = '<i class="bi bi-box-arrow-in-right me-2"></i>Login';
+            }
             return;
         }
         
         try {
             // Special case for admin user (for backward compatibility)
             if (email === 'admin@admin.com' && password === 'password123') {
-                // Use Firebase sign in
-                await signInWithEmailAndPassword(auth, email, password)
-                    .catch(async (error) => {
-                        // If admin doesn't exist in Firebase yet, create it
-                        if (error.code === 'auth/user-not-found') {
-                            await createUserWithEmailAndPassword(auth, email, password);
-                            
-                            // Create admin user document in Firestore
-                            const userRef = doc(db, 'users', auth.currentUser.uid);
-                            await setDoc(userRef, {
-                                name: 'Administrator',
-                                email: email,
-                                role: 'admin',
-                                createdAt: new Date().toISOString()
-                            });
-                        } else {
-                            throw error;
-                        }
-                    });
+                console.log('Admin login attempt');
                 
+                try {
+                    // First try to sign in as admin
+                    await signInWithEmailAndPassword(auth, email, password);
+                    console.log('Admin login successful');
+                } catch (error) {
+                    // If admin doesn't exist in Firebase yet, create it
+                    if (error.code === 'auth/user-not-found') {
+                        console.log('Admin user not found, creating new admin account');
+                        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                        
+                        // Create admin user document in Firestore
+                        const userRef = doc(db, 'users', userCredential.user.uid);
+                        await setDoc(userRef, {
+                            name: 'Administrator',
+                            email: email,
+                            role: 'admin',
+                            createdAt: new Date().toISOString()
+                        });
+                        console.log('Admin account created successfully');
+                    } else {
+                        throw error;
+                    }
+                }
+                
+                // Get the admin user data
+                const adminUser = {
+                    id: auth.currentUser.uid,
+                    name: 'Administrator',
+                    email: email,
+                    role: 'admin'
+                };
+                
+                // Update UI for logged in admin
+                this.updateUIForLoggedInUser(adminUser);
                 this.showMessage('Admin login successful!', 'success');
                 
-                // Close modal if exists
-                const modalElement = document.getElementById('authModal');
-                if (modalElement) {
-                    const modal = bootstrap.Modal.getInstance(modalElement);
-                    if (modal) modal.hide();
+                // Re-enable login button
+                if (loginBtn) {
+                    loginBtn.disabled = false;
+                    loginBtn.innerHTML = '<i class="bi bi-box-arrow-in-right me-2"></i>Login';
                 }
                 
                 return;
             }
             
+            console.log('Regular user login attempt');
+            
             // Regular user login with Firebase
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
+            console.log('Firebase login successful, user:', user);
             
-            this.showMessage('Login successful!', 'success');
+            // Get additional user data from Firestore
+            const userRef = doc(db, 'users', user.uid);
+            const docSnap = await getDoc(userRef);
             
-            // Close modal if exists
-            const modalElement = document.getElementById('authModal');
-            if (modalElement) {
-                const modal = bootstrap.Modal.getInstance(modalElement);
-                if (modal) modal.hide();
+            let userData;
+            if (docSnap.exists()) {
+                const firestoreData = docSnap.data();
+                userData = {
+                    id: user.uid,
+                    name: firestoreData.name || user.displayName || user.email.split('@')[0],
+                    email: user.email,
+                    phone: firestoreData.phone || ''
+                };
+            } else {
+                userData = {
+                    id: user.uid,
+                    name: user.displayName || user.email.split('@')[0],
+                    email: user.email
+                };
+                
+                // Create a user document in Firestore if it doesn't exist
+                await setDoc(userRef, {
+                    name: userData.name,
+                    email: userData.email,
+                    createdAt: new Date().toISOString()
+                });
             }
+            
+            // Update UI with user data
+            this.updateUIForLoggedInUser(userData);
+            this.showMessage('Login successful!', 'success');
             
             // Redirect to booking page if on login page
             if (window.location.pathname.includes('login.html')) {
@@ -177,33 +281,64 @@ const AuthSystem = {
                 case 'auth/too-many-requests':
                     errorMessage = 'Too many failed login attempts. Please try again later.';
                     break;
+                case 'auth/network-request-failed':
+                    errorMessage = 'Network error. Please check your internet connection.';
+                    break;
             }
             
             this.showMessage(errorMessage, 'error');
+        } finally {
+            // Re-enable login button
+            if (loginBtn) {
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = '<i class="bi bi-box-arrow-in-right me-2"></i>Login';
+            }
         }
     },
     
     // Register functionality
     register: async function() {
+        console.log('Registration attempt started');
+        
+        // Disable the register button to prevent multiple submissions
+        const registerBtn = document.querySelector('#registerForm button[type="submit"]');
+        if (registerBtn) {
+            registerBtn.disabled = true;
+            registerBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Creating Account...';
+        }
+        
         const name = document.getElementById('registerName').value;
         const email = document.getElementById('registerEmail').value;
         const phone = document.getElementById('registerPhone').value;
         const password = document.getElementById('registerPassword').value;
         const confirmPassword = document.getElementById('confirmPassword').value;
+        const termsCheck = document.getElementById('termsCheck');
         
         // Validate inputs
         if (!name || !email || !phone || !password || !confirmPassword) {
             this.showMessage('Please fill all fields', 'error');
+            if (registerBtn) {
+                registerBtn.disabled = false;
+                registerBtn.innerHTML = '<i class="bi bi-person-plus me-2"></i>Create Account';
+            }
             return;
         }
         
         if (password !== confirmPassword) {
             this.showMessage('Passwords do not match', 'error');
+            if (registerBtn) {
+                registerBtn.disabled = false;
+                registerBtn.innerHTML = '<i class="bi bi-person-plus me-2"></i>Create Account';
+            }
             return;
         }
         
         if (password.length < 6) {
             this.showMessage('Password must be at least 6 characters long', 'error');
+            if (registerBtn) {
+                registerBtn.disabled = false;
+                registerBtn.innerHTML = '<i class="bi bi-person-plus me-2"></i>Create Account';
+            }
             return;
         }
         
@@ -211,14 +346,39 @@ const AuthSystem = {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
             this.showMessage('Please enter a valid email address', 'error');
+            if (registerBtn) {
+                registerBtn.disabled = false;
+                registerBtn.innerHTML = '<i class="bi bi-person-plus me-2"></i>Create Account';
+            }
+            return;
+        }
+        
+        // Check terms and conditions
+        if (termsCheck && !termsCheck.checked) {
+            this.showMessage('Please agree to the Terms and Conditions', 'error');
+            if (registerBtn) {
+                registerBtn.disabled = false;
+                registerBtn.innerHTML = '<i class="bi bi-person-plus me-2"></i>Create Account';
+            }
             return;
         }
         
         try {
+            console.log('Creating user in Firebase Authentication');
             // Create user with Firebase Authentication
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
+            console.log('User created in Firebase Authentication:', user);
             
+            // Create user data object
+            const userData = {
+                id: user.uid,
+                name: name,
+                email: email,
+                phone: phone
+            };
+            
+            console.log('Storing additional user data in Firestore');
             // Store additional user data in Firestore
             const userRef = doc(db, 'users', user.uid);
             await setDoc(userRef, {
@@ -228,14 +388,19 @@ const AuthSystem = {
                 createdAt: new Date().toISOString()
             });
             
+            console.log('User data stored in Firestore');
             this.showMessage('Registration successful! You are now logged in.', 'success');
             
-            // Close modal if exists
-            const modalElement = document.getElementById('authModal');
-            if (modalElement) {
-                const modal = bootstrap.Modal.getInstance(modalElement);
-                if (modal) modal.hide();
-            }
+            // Update UI for logged in user
+            this.updateUIForLoggedInUser(userData);
+            
+            // Redirect to booking page after successful registration
+            setTimeout(() => {
+                if (window.location.pathname.includes('index.html') || window.location.pathname.endsWith('/')) {
+                    window.location.href = 'bookings.html';
+                }
+            }, 1500);
+            
         } catch (error) {
             console.error('Registration error:', error);
             let errorMessage = 'Registration failed. Please try again.';
@@ -251,19 +416,36 @@ const AuthSystem = {
                 case 'auth/weak-password':
                     errorMessage = 'Password is too weak. Please use a stronger password.';
                     break;
+                case 'auth/network-request-failed':
+                    errorMessage = 'Network error. Please check your internet connection.';
+                    break;
             }
             
             this.showMessage(errorMessage, 'error');
+        } finally {
+            // Re-enable register button
+            if (registerBtn) {
+                registerBtn.disabled = false;
+                registerBtn.innerHTML = '<i class="bi bi-person-plus me-2"></i>Create Account';
+            }
         }
     },
     
     // Logout functionality
     logout: async function() {
+        console.log("Logout attempt started");
+        
         try {
             // Sign out from Firebase
             await signOut(auth);
             
+            console.log("User signed out successfully");
             this.showMessage('Logged out successfully', 'success');
+            
+            // Clear user data from localStorage
+            localStorage.removeItem('currentUser');
+            
+            // Update UI for logged out user
             this.updateUIForLoggedOutUser();
             
             // Redirect to home if on protected page
@@ -271,6 +453,7 @@ const AuthSystem = {
             const currentPage = window.location.pathname.split('/').pop();
             
             if (protectedPages.includes(currentPage)) {
+                console.log("Redirecting from protected page to home");
                 window.location.href = 'index.html';
             }
         } catch (error) {
@@ -281,20 +464,38 @@ const AuthSystem = {
     
     // Update UI for logged in user
     updateUIForLoggedInUser: function(user) {
+        console.log('Updating UI for logged in user:', user);
+        
         // Store user data in localStorage
         localStorage.setItem('currentUser', JSON.stringify(user));
         
         // Update UI elements
-        const loginBtn = document.getElementById('loginBtn');
-        const logoutBtn = document.getElementById('logoutBtn');
-        const userDisplay = document.getElementById('userDisplay');
+        const authButtons = document.querySelectorAll('.auth-buttons');
+        const userMenus = document.querySelectorAll('.user-menu');
+        const userDisplays = document.querySelectorAll('#userDisplay');
+        const logoutBtns = document.querySelectorAll('#logoutBtn');
         
-        if (loginBtn) loginBtn.classList.add('d-none');
-        if (logoutBtn) logoutBtn.classList.remove('d-none');
-        if (userDisplay) {
-            userDisplay.classList.remove('d-none');
-            userDisplay.textContent = user.name;
-        }
+        // Hide auth buttons and show user menu
+        authButtons.forEach(el => el.classList.add('d-none'));
+        userMenus.forEach(el => el.classList.remove('d-none'));
+        
+        // Update all username displays
+        userDisplays.forEach(el => {
+            el.textContent = user.name;
+        });
+        
+        // Add event listeners to all logout buttons
+        logoutBtns.forEach(btn => {
+            // Remove any existing event listeners to prevent duplicates
+            const newBtn = btn.cloneNode(true);
+            btn.parentNode.replaceChild(newBtn, btn);
+            
+            // Add new event listener
+            newBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.logout();
+            });
+        });
         
         // Close the login modal if it's open
         const authModal = document.getElementById('authModal');
@@ -333,11 +534,25 @@ const AuthSystem = {
     
     // Update UI for logged out user
     updateUIForLoggedOutUser: function() {
+        console.log('Updating UI for logged out user');
+        
+        // Clear any stored user data
+        localStorage.removeItem('currentUser');
+        
+        // Show auth buttons and hide user menu
         const authButtons = document.querySelectorAll('.auth-buttons');
         const userMenus = document.querySelectorAll('.user-menu');
         
         authButtons.forEach(el => el.classList.remove('d-none'));
         userMenus.forEach(el => el.classList.add('d-none'));
+        
+        // Redirect to login page if on protected page
+        const protectedPages = ['my-bookings.html'];
+        const currentPage = window.location.pathname.split('/').pop();
+        
+        if (protectedPages.includes(currentPage)) {
+            window.location.href = 'index.html';
+        }
     },
     
     // Show login form

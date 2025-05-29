@@ -213,10 +213,10 @@
                     </ul>
                     <!-- Auth buttons (shown when logged out) -->
                     <div class="auth-buttons">
-                        <button type="button" class="btn btn-outline-light me-2" data-bs-toggle="modal" data-bs-target="#authModal">
+                        <button type="button" class="btn btn-outline-light me-2" data-bs-toggle="modal" data-bs-target="#authModal" id="navLoginBtn">
                             <i class="bi bi-box-arrow-in-right me-1"></i> Login
                         </button>
-                        <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#authModal" onclick="AuthSystem.showRegisterForm()">
+                        <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#authModal" id="navRegisterBtn">
                             <i class="bi bi-person-plus me-1"></i> Register
                         </button>
                     </div>
@@ -300,7 +300,28 @@
             <!-- Booking Form -->
             <div class="row">
                 <div class="col-lg-8 mx-auto">
-                    <div class="card shadow" data-aos="fade-up" data-aos-delay="100">
+                    <!-- Login Prompt (shown when logged out) -->
+                    <div class="card shadow" id="loginPrompt" data-aos="fade-up" data-aos-delay="100">
+                        <div class="card-body p-5 text-center">
+                            <h2 class="card-title text-center mb-4">Book Your Event</h2>
+                            <div class="mb-4">
+                                <i class="bi bi-lock-fill" style="font-size: 3rem; color: #af8958;"></i>
+                                <p class="lead mt-3">Please login or create an account to make a booking</p>
+                                <p class="text-muted">You need to be logged in to access our booking system</p>
+                            </div>
+                            <div class="d-grid gap-2 col-lg-6 mx-auto">
+                                <button type="button" class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#authModal" id="promptLoginBtn">
+                                    <i class="bi bi-box-arrow-in-right me-2"></i>Login
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-lg" data-bs-toggle="modal" data-bs-target="#authModal" id="promptRegisterBtn">
+                                    <i class="bi bi-person-plus me-2"></i>Create Account
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Booking Form Card (hidden until logged in) -->
+                    <div class="card shadow d-none" id="bookingFormCard" data-aos="fade-up" data-aos-delay="100">
                         <div class="card-body p-5">
                             <h2 class="card-title text-center mb-4">Booking Form</h2>
                             
@@ -392,6 +413,41 @@
                                     </button>
                                 </div>
                             </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Bookings Calendar Section (Hidden by default) -->
+    <section id="bookingsCalendarContainer" class="container py-5 d-none">
+        <div class="row">
+            <div class="col-12 mb-4">
+                <h3 class="text-center"><i class="bi bi-calendar3-week me-2"></i>Bookings Calendar</h3>
+                <p class="text-center text-muted">View availability and your upcoming bookings</p>
+            </div>
+            <div class="col-lg-10 mx-auto">
+                <div class="card shadow">
+                    <div class="card-body p-0">
+                        <div class="calendar-container">
+                            <div class="calendar-header">
+                                <button id="prevMonth" class="btn btn-sm btn-outline-secondary"><i class="bi bi-chevron-left"></i></button>
+                                <h4 id="currentMonthYear">January 2025</h4>
+                                <button id="nextMonth" class="btn btn-sm btn-outline-secondary"><i class="bi bi-chevron-right"></i></button>
+                            </div>
+                            <div class="calendar-weekdays">
+                                <div>Sun</div>
+                                <div>Mon</div>
+                                <div>Tue</div>
+                                <div>Wed</div>
+                                <div>Thu</div>
+                                <div>Fri</div>
+                                <div>Sat</div>
+                            </div>
+                            <div id="calendarDays" class="calendar-days">
+                                <!-- Calendar days will be generated here -->
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -585,7 +641,8 @@
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="bi bi-key"></i></span>
                                     <input type="password" class="form-control" id="loginPassword" placeholder="Your password" required>
-                                </div>                                
+                                </div>
+                            </div>
                             <div class="d-grid">
                                 <button type="submit" class="btn btn-primary btn-lg">
                                     <i class="bi bi-box-arrow-in-right me-2"></i>Login
@@ -743,10 +800,10 @@
     
     <!-- Bootstrap Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
     <!-- AOS Animation Library -->
     <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
-    
+    <!-- Main Script -->
+    <script src="./js/script.js"></script>
     <!-- Firebase SDK -->
     <script type="module">
       // Import the functions you need from the SDKs you need
@@ -809,15 +866,63 @@
         document.addEventListener('DOMContentLoaded', function() {
             const loginForm = document.getElementById('loginForm');
             const authMessage = document.getElementById('authMessage');
+            const registerForm = document.getElementById('registerForm');
+            const showRegisterBtn = document.getElementById('showRegisterBtn');
+            const showLoginBtn = document.getElementById('showLoginBtn');
+            
+            // Switch between login and register forms
+            if (showRegisterBtn) {
+                showRegisterBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    document.getElementById('loginFormContainer').classList.add('d-none');
+                    document.getElementById('registerFormContainer').classList.remove('d-none');
+                    document.getElementById('authModalLabel').textContent = 'Create an Account';
+                });
+            }
+            
+            if (showLoginBtn) {
+                showLoginBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    document.getElementById('registerFormContainer').classList.add('d-none');
+                    document.getElementById('loginFormContainer').classList.remove('d-none');
+                    document.getElementById('authModalLabel').textContent = 'Login to Your Account';
+                });
+            }
+            
+            // Handle navigation bar login/register buttons
+            const navLoginBtn = document.getElementById('navLoginBtn');
+            const navRegisterBtn = document.getElementById('navRegisterBtn');
+            
+            if (navLoginBtn) {
+                navLoginBtn.addEventListener('click', function() {
+                    document.getElementById('registerFormContainer').classList.add('d-none');
+                    document.getElementById('loginFormContainer').classList.remove('d-none');
+                    document.getElementById('authModalLabel').textContent = 'Login to Your Account';
+                });
+            }
+            
+            if (navRegisterBtn) {
+                navRegisterBtn.addEventListener('click', function() {
+                    document.getElementById('loginFormContainer').classList.add('d-none');
+                    document.getElementById('registerFormContainer').classList.remove('d-none');
+                    document.getElementById('authModalLabel').textContent = 'Create an Account';
+                });
+            }
+            
+            // Handle login form submission
             if (loginForm) {
                 loginForm.addEventListener('submit', function(e) {
                     e.preventDefault();
                     const email = document.getElementById('loginEmail').value.trim();
                     const password = document.getElementById('loginPassword').value;
+                    
+                    if (!email || !password) {
+                        showMessage('Please enter both email and password', 'error');
+                        return;
+                    }
+                    
                     if (email === 'admin@admin.com' && password === 'password123') {
-                        authMessage.className = 'alert alert-success';
-                        authMessage.textContent = 'Login successful! Welcome, admin.';
-                        authMessage.classList.remove('d-none');
+                        showMessage('Login successful! Welcome, Administrator.', 'success');
                         
                         // Store admin user in localStorage for session management
                         const adminUser = {
@@ -827,30 +932,151 @@
                         };
                         localStorage.setItem('currentUser', JSON.stringify(adminUser));
                         
-                        // Show booking form, calendar and previous bookings
+                        // Update username in navbar
+                        updateUsernameInNavbar('Administrator');
+                        
+                        // Show booking interface
                         showBookingInterfaceAfterLogin();
                         
                         // Close modal after login
                         setTimeout(() => {
-                            const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('authModal'));
-                            modal.hide();
+                            const modal = bootstrap.Modal.getInstance(document.getElementById('authModal'));
+                            if (modal) modal.hide();
                         }, 1200);
                     } else {
-                        authMessage.className = 'alert alert-danger';
-                        authMessage.textContent = 'Invalid email or password.';
-                        authMessage.classList.remove('d-none');
+                        showMessage('Invalid email or password.', 'error');
                     }
                 });
             }
             
-            // Function to show all booking interfaces after login
+            // Handle register form submission
+            if (registerForm) {
+                registerForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const name = document.getElementById('registerName').value;
+                    const email = document.getElementById('registerEmail').value;
+                    const phone = document.getElementById('registerPhone').value;
+                    const password = document.getElementById('registerPassword').value;
+                    const confirmPassword = document.getElementById('confirmPassword').value;
+                    
+                    if (!name || !email || !phone || !password || !confirmPassword) {
+                        showMessage('Please fill all fields', 'error');
+                        return;
+                    }
+                    
+                    if (password !== confirmPassword) {
+                        showMessage('Passwords do not match', 'error');
+                        return;
+                    }
+                    
+                    if (password.length < 6) {
+                        showMessage('Password must be at least 6 characters long', 'error');
+                        return;
+                    }
+                    
+                    // Email validation
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (!emailRegex.test(email)) {
+                        showMessage('Please enter a valid email address', 'error');
+                        return;
+                    }
+                    
+                    // Register user (simplified version without Firebase)
+                    const newUser = {
+                        id: 'user-' + Date.now(),
+                        name: name,
+                        email: email,
+                        phone: phone
+                    };
+                    
+                    // Store user in localStorage
+                    localStorage.setItem('currentUser', JSON.stringify(newUser));
+                    
+                    // Update username in navbar
+                    updateUsernameInNavbar(name);
+                    
+                    showMessage('Registration successful! You are now logged in.', 'success');
+                    
+                    // Show booking interface
+                    showBookingInterfaceAfterLogin();
+                    
+                    // Close modal after registration
+                    setTimeout(() => {
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('authModal'));
+                        if (modal) modal.hide();
+                    }, 1200);
+                });
+            }
+            
+            // Function to display messages
+            function showMessage(message, type) {
+                if (authMessage) {
+                    authMessage.className = type === 'error' ? 'alert alert-danger' : 'alert alert-success';
+                    authMessage.textContent = message;
+                    authMessage.classList.remove('d-none');
+                    
+                    // Hide message after 3 seconds
+                    setTimeout(() => {
+                        authMessage.classList.add('d-none');
+                    }, 3000);
+                }
+            }
+            
+            // Function to update username in navbar
+            function updateUsernameInNavbar(name) {
+                const userNameDisplay = document.querySelector('.user-name');
+                if (userNameDisplay) {
+                    userNameDisplay.textContent = name;
+                }
+                
+                // Hide auth buttons and show user menu
+                const authButtons = document.querySelector('.auth-buttons');
+                const userMenu = document.querySelector('.user-menu');
+                
+                if (authButtons) authButtons.classList.add('d-none');
+                if (userMenu) userMenu.classList.remove('d-none');
+            }
+            
+            // Check if user is logged in on page load
+            const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+            if (currentUser && currentUser.name) {
+                updateUsernameInNavbar(currentUser.name);
+            }
+            
+            // Handle logout
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Clear user data
+                    localStorage.removeItem('currentUser');
+                    
+                    // Show auth buttons and hide user menu
+                    const authButtons = document.querySelector('.auth-buttons');
+                    const userMenu = document.querySelector('.user-menu');
+                    
+                    if (authButtons) authButtons.classList.remove('d-none');
+                    if (userMenu) userMenu.classList.add('d-none');
+                    
+                    // Redirect to home if on protected page
+                    location.reload();
+                });
+            }
+        });
+            
+            // Function to show booking interface after login
             function showBookingInterfaceAfterLogin() {
-                // Show booking form
-                const bookingForm = document.getElementById('bookingForm');
+                // Hide login prompt and show booking form
                 const loginPrompt = document.getElementById('loginPrompt');
-                if (bookingForm && loginPrompt) {
+                const bookingFormCard = document.getElementById('bookingFormCard');
+                
+                if (loginPrompt) {
                     loginPrompt.classList.add('d-none');
-                    bookingForm.parentElement.parentElement.parentElement.classList.remove('d-none');
+                }
+                
+                if (bookingFormCard) {
+                    bookingFormCard.classList.remove('d-none');
                 }
                 
                 // Show bookings calendar
@@ -866,7 +1092,9 @@
                 if (myBookingsContainer) {
                     myBookingsContainer.classList.remove('d-none');
                     // Load user's bookings
-                    BookingSystem.loadUserBookings();
+                    if (typeof loadMyBookings === 'function') {
+                        loadMyBookings();
+                    }
                 }
                 
                 // Show review section
@@ -877,13 +1105,12 @@
                 
                 // Show admin panel if admin is logged in
                 const adminPanel = document.getElementById('adminPanel');
-                if (adminPanel && user.email === 'admin@admin.com') {
+                const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+                if (adminPanel && currentUser.email === 'admin@admin.com') {
                     adminPanel.classList.remove('d-none');
                     // Load all bookings for admin
-                    loadAllBookingsForAdmin();
-                    // Load pending reviews
-                    if (typeof ReviewSystem !== 'undefined' && ReviewSystem.loadPendingReviews) {
-                        ReviewSystem.loadPendingReviews();
+                    if (typeof loadAllBookingsForAdmin === 'function') {
+                        loadAllBookingsForAdmin();
                     }
                 }
             }
@@ -1004,9 +1231,11 @@
             }
             
             // Check if user is already logged in and show appropriate UI
-            if (localStorage.getItem('currentUser')) {
-                showBookingInterfaceAfterLogin();
-            }
+            document.addEventListener('DOMContentLoaded', function() {
+                if (localStorage.getItem('currentUser')) {
+                    showBookingInterfaceAfterLogin();
+                }
+            });
             
             // Function to load all bookings for admin panel
             function loadAllBookingsForAdmin() {
@@ -1045,16 +1274,24 @@
                             break;
                     }
                     
+                    // Get user name and contact info with fallbacks
+                    const userName = booking.userName || (booking.user && booking.user.name) || 'Unknown';
+                    const userEmail = booking.userEmail || (booking.user && booking.user.email) || 'No email';
+                    const userPhone = booking.userPhone || (booking.user && booking.user.phone) || 'N/A';
+                    const eventType = booking.eventType || booking['Event Type'] || 'N/A';
+                    const guestCount = booking.guestCount || booking.Guests || (booking['Guests'] ? booking['Guests'] : '0');
+                    const bookingStatus = booking.status || booking.Status || 'Pending';
+                    
                     row.innerHTML = `
-                        <td>${formattedDate}<br><small class="text-muted">${booking.timeSlot}</small></td>
-                        <td>${booking.userName}</td>
+                        <td>${formattedDate}<br><small class="text-muted">${booking.timeSlot || 'No time'}</small></td>
+                        <td>${userName}</td>
                         <td>
-                            <small><i class="bi bi-envelope"></i> ${booking.userEmail}</small><br>
-                            <small><i class="bi bi-telephone"></i> ${booking.userPhone || 'N/A'}</small>
+                            <small><i class="bi bi-envelope"></i> ${userEmail}</small><br>
+                            <small><i class="bi bi-telephone"></i> ${userPhone}</small>
                         </td>
-                        <td>${booking.eventType}</td>
-                        <td>${booking.guestCount}</td>
-                        <td><span class="booking-status ${statusClass}">${booking.status}</span></td>
+                        <td>${eventType}</td>
+                        <td>${guestCount}</td>
+                        <td><span class="booking-status ${statusClass}">${bookingStatus}</span></td>
                         <td>
                             <div class="btn-group btn-group-sm">
                                 <button class="btn btn-outline-success confirm-booking-btn" data-booking-id="${booking.id}" title="Confirm Booking">
@@ -1119,7 +1356,7 @@
                     }
                 }
             }
-        });
+        
     </script>
     
     <!-- Local Database Scripts -->
