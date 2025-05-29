@@ -165,58 +165,6 @@ header {
     animation: fadeInUp 1s ease;
 }
 
-/* Carousel Container Styles */
-.carousel-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 20px;
-  padding: 2rem;
-  background-color: #5c6ef8; /* purple-blue background */
-}
-
-.hero-img-square {
-  width: 140px;
-  height: 140px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
-  flex-shrink: 0;
-}
-
-.hero-img-square.active {
-  background: #ffffff;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-  transform: scale(1.1);
-}
-
-.hero-img-square img,
-.hero-img-square svg {
-  width: 48px;
-  height: 48px;
-}
-
-.carousel-dots {
-  display: flex;
-  justify-content: center;
-  margin-top: 1rem;
-  gap: 8px;
-}
-
-.carousel-dots span {
-  width: 10px;
-  height: 10px;
-  background: #ffffff80;
-  border-radius: 50%;
-}
-
-.carousel-dots span.active {
-  background: #ffffff;
-}
-
 /* Sections */
 section {
     padding: 80px 0;
