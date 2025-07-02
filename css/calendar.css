@@ -105,3 +105,11 @@
 .booking-item:hover {
     background-color: rgba(185, 72, 78, 0.2);
 }
+
+.booked-date {
+    background-color: #e74c3c !important;
+    color: #fff !important;
+    border-radius: 50%;
+    font-weight: bold;
+    box-shadow: 0 0 4px #e74c3c;
+}

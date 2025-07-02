@@ -1,0 +1,297 @@
+body {
+    font-family: 'Baskerville', serif;
+    background: url('../img/image26.jpg') no-repeat center center fixed;
+    background-size: cover;
+    background-attachment: fixed;
+    margin: 0;
+    padding: 0;
+    scroll-behavior: smooth;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* Header Styling */
+header {
+    position: relative;
+    background: white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.navbar {
+    position: sticky;
+    top: 0;
+    width: 100%;
+    background-color: #B9484E;
+    color: white;
+    padding: 8px 15px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    z-index: 900;
+    height: 50px;
+}
+
+.navbar-brand img {
+    height: 40px;
+    margin-right: 10px;
+}
+
+.navbar-nav .nav-link {
+    color: #fff;
+    font-weight: bold;
+    margin: 0 10px;
+    font-size: 0.9rem;
+}
+
+.navbar-nav .nav-link:hover {
+    color: #d8bc70;
+}
+
+.navbar-nav .active {
+    color: #d8bc70 !important;
+}
+
+/* Highlight text color */
+.highlight-text {
+    color: #d8bc70;
+}
+
+/* Form Styling */
+.form-container {
+    margin: 50px auto;
+    padding: 40px;
+    max-width: 600px;
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.form-section .mb-3 {
+    margin-bottom: 1rem;
+}
+
+.form-label {
+    font-weight: bold;
+    color: #333;
+}
+
+.btn-primary {
+    background-color: #af8958;
+    border: none;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    background-color: #d8bc70;
+    transform: scale(1.02);
+}
+
+/* Call button styling */
+.call-btn {
+    background-color: #d8bc70;
+    color: white;
+    font-weight: bold;
+    border-radius: 25px;
+    padding: 5px 20px;
+    font-size: 14px;
+    text-decoration: none;
+}
+
+.call-btn:hover {
+    background-color: #c9ad61;
+    color: white;
+}
+
+/* Card and section styling */
+.card {
+    border: none;
+    transition: transform 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+/* Stepper Styling */
+.stepper-wrapper {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+}
+.stepper-item {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+}
+.stepper-item::before {
+    position: absolute;
+    content: "";
+    border-bottom: 2px solid #ccc;
+    width: 100%;
+    top: 20px;
+    left: -50%;
+    z-index: 2;
+}
+.stepper-item::after {
+    position: absolute;
+    content: "";
+    border-bottom: 2px solid #ccc;
+    width: 100%;
+    top: 20px;
+    left: 50%;
+    z-index: 2;
+}
+.stepper-item .step-counter {
+    position: relative;
+    z-index: 5;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #ccc;
+    margin-bottom: 6px;
+}
+.stepper-item.active .step-counter {
+    background-color: #af8958;
+    color: #fff;
+}
+.stepper-item.completed .step-counter {
+    background-color: #4BB543;
+    color: #fff;
+}
+.stepper-item:first-child::before {
+    content: none;
+}
+.stepper-item:last-child::after {
+    content: none;
+}
+
+/* Form Step Styling */
+.form-step {
+    display: none;
+}
+.form-step.active {
+    display: block;
+}
+
+/* Calendar Styling */
+.calendar-container {
+    padding: 20px;
+    border-radius: 10px;
+    background-color: #f9f9f9;
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.calendar-header h3 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.calendar-nav-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+}
+
+.calendar-day-header, .calendar-day {
+    text-align: center;
+    padding: 10px;
+}
+
+.calendar-day {
+    cursor: pointer;
+    border-radius: 50%;
+    transition: background-color 0.3s;
+}
+
+.calendar-day.other-month {
+    color: #ccc;
+    cursor: default;
+}
+
+.calendar-day.today {
+    background-color: #ffc107;
+    color: #fff;
+}
+
+.calendar-day.selected {
+    background-color: #af8958;
+    color: #fff;
+}
+
+.calendar-day.booked {
+    background-color: #dc3545;
+    color: #fff;
+    cursor: not-allowed;
+    text-decoration: line-through;
+}
+
+.calendar-day:not(.other-month):hover {
+    background-color: #e9ecef;
+}
+
+/* Footer styling */
+footer {
+    background-color: #B9484E;
+    color: white;
+    padding: 40px 0 20px;
+}
+
+footer a.text-white {
+    text-decoration: none;
+}
+
+footer a.text-white:hover {
+    color: #d8bc70 !important;
+    text-decoration: underline;
+}
+
+/* Social links */
+.social-links a {
+    color: white;
+    margin-right: 15px;
+    font-size: 1.2rem;
+}
+
+.social-links a:hover {
+    color: #d8bc70;
+}
+
+/* My Bookings table */
+.bookings-table {
+    background-color: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+/* AOS animations */
+[data-aos] {
+    pointer-events: none;
+}
+
+[data-aos].aos-animate {
+    pointer-events: auto;
+}
+
+#booking {
+    background-color: rgba(255, 255, 255, 0.8);
+    padding: 30px 0;
+    border-radius: 10px;
+}

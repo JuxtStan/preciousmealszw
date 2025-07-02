@@ -2,6 +2,8 @@
  * Main JavaScript file for Precious Meals & Bakes
  */
 
+// All authentication, login, registration, and user UI update functions and event listeners have been removed from this file. Only non-auth related UI logic remains. Authentication and UI updates are now handled exclusively by js/auth.js.
+
 document.addEventListener('DOMContentLoaded', function() {
     // Check if user is logged in
     const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
@@ -143,6 +145,7 @@ function loginUser() {
         };
         
         localStorage.setItem('currentUser', JSON.stringify(adminUser));
+        document.dispatchEvent(new CustomEvent('loginSuccess'));
         showMessage('Login successful! Welcome, Administrator.', 'success');
         updateUIForLoggedInUser(adminUser);
         
@@ -198,6 +201,7 @@ function registerUser() {
     
     // Store user in localStorage
     localStorage.setItem('currentUser', JSON.stringify(newUser));
+    document.dispatchEvent(new CustomEvent('loginSuccess'));
     
     showMessage('Registration successful! You are now logged in.', 'success');
     updateUIForLoggedInUser(newUser);
@@ -250,24 +254,8 @@ function updateUIForLoggedInUser(user) {
     authButtons.forEach(button => button.classList.add('d-none'));
     userMenus.forEach(menu => menu.classList.remove('d-none'));
     
-    // Show booking interface if on bookings page
-    if (window.location.pathname.includes('bookings.html')) {
-        // Call the showBookingInterfaceAfterLogin function if it exists
-        if (typeof window.showBookingInterfaceAfterLogin === 'function') {
-            window.showBookingInterfaceAfterLogin();
-        } else {
-            // If the function doesn't exist yet, wait for it to be defined
-            setTimeout(() => {
-                if (typeof window.showBookingInterfaceAfterLogin === 'function') {
-                    window.showBookingInterfaceAfterLogin();
-                } else {
-                    console.error('showBookingInterfaceAfterLogin function not found');
-                    // Fallback: try to show elements directly
-                    showBookingElementsDirectly();
-                }
-            }, 500);
-        }
-    }
+    // Page-specific logic for showing elements after login (like on the bookings page)
+    // is now handled within the page's own script (e.g., bookings.js) to avoid conflicts.
 }
 
 // Fallback function to show booking elements directly if the main function is not available
