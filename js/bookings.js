@@ -141,6 +141,8 @@ function initializeBookingForm() {
             userId: loggedInUser.id,
             userName: loggedInUser.name,
             userEmail: loggedInUser.email,
+            contactNumber: document.getElementById('contactNumber').value,
+            eventLocation: document.getElementById('eventLocation').value,
             eventDate: document.getElementById('eventDate').value,
             eventType: document.getElementById('eventType').value,
             timeSlot: document.getElementById('timeSlot').value,
@@ -168,6 +170,8 @@ function updateBookingSummary() {
     const eventType = document.getElementById('eventType').value;
     const timeSlot = document.getElementById('timeSlot').value;
     const guestCount = document.getElementById('guestCount').value;
+    const contactNumber = document.getElementById('contactNumber').value;
+    const eventLocation = document.getElementById('eventLocation').value;
     const specialRequests = document.getElementById('specialRequests').value;
 
     const summary = `
@@ -175,6 +179,8 @@ function updateBookingSummary() {
         <p><strong>Time:</strong> ${timeSlot}</p>
         <p><strong>Event Type:</strong> ${eventType}</p>
         <p><strong>Guests:</strong> ${guestCount}</p>
+        <p><strong>Contact:</strong> ${contactNumber}</p>
+        <p><strong>Location:</strong> ${eventLocation}</p>
         <p><strong>Special Requests:</strong> ${specialRequests || 'None'}</p>
     `;
     document.getElementById('bookingSummary').innerHTML = summary;
@@ -243,6 +249,8 @@ function showBookingDetails(booking) {
         <p><strong>Booking ID:</strong> ${booking.id}</p>
         <p><strong>Date:</strong> ${new Date(booking.eventDate).toDateString()}</p>
         <p><strong>Time:</strong> ${booking.timeSlot}</p>
+        <p><strong>Contact Number:</strong> ${booking.contactNumber}</p>
+        <p><strong>Event Location:</strong> ${booking.eventLocation}</p>
         <p><strong>Number of Guests:</strong> ${booking.guestCount}</p>
         <p><strong>Special Requests:</strong> ${booking.specialRequests || 'None'}</p>
         <p><strong>Status:</strong> <span class="badge bg-${statusClass}">${booking.status}</span></p>
@@ -272,6 +280,8 @@ function loadAllBookings() {
                     <th>Event Date</th>
                     <th>Event Type</th>
                     <th>Guests</th>
+                    <th>Contact</th>
+                    <th>Location</th>
                     <th>Status</th>
                     <th>Actions</th>
                 </tr>
@@ -288,6 +298,8 @@ function loadAllBookings() {
                             <td>${new Date(booking.eventDate).toLocaleDateString()}</td>
                             <td>${booking.eventType}</td>
                             <td>${booking.guestCount}</td>
+                            <td>${booking.contactNumber}</td>
+                            <td>${booking.eventLocation}</td>
                             <td><span class="badge bg-${statusClass}">${booking.status}</span></td>
                             <td>
                                 ${booking.status === 'Pending' ? `
@@ -329,10 +341,17 @@ function updateBookingStatus(bookingId, newStatus) {
     if (bookingIndex !== -1) {
         allBookings[bookingIndex].status = newStatus;
         localStorage.setItem('bookings', JSON.stringify(allBookings));
-        // Refresh the admin view by re-clicking the button
+        
+        // Refresh the admin view to show the updated status
         document.getElementById('all-bookings-btn')?.click();
+
+        // Refresh the calendar to reflect the booking change
+        initializeCalendar();
     }
 }
+
+// Expose the calendar initialization function to the global scope so it can be called from other scripts
+window.initializeBookingsCalendar = initializeCalendar;
 
 // --- Calendar Logic ---
 function initializeCalendar() {

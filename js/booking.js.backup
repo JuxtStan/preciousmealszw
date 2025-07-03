@@ -22,7 +22,7 @@ import {
 const BookingSystem = {
     // System configuration
     config: {
-        minDaysInAdvance: 2, // Minimum days required to book in advance
+        minDaysInAdvance: 5, // Minimum days required to book in advance
         maxDaysInFuture: 90, // Maximum days in future that can be booked
         workingHours: {
             start: 8, // 8 AM
