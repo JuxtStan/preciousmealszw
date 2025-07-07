@@ -1,190 +1,159 @@
-/**
- * Authentication System for Precious Meals & Bakes
- * Handles user registration, login, and dispatches 'loginSuccess' event.
- */
+document.addEventListener('DOMContentLoaded', () => {
+    const API_URL = 'http://127.0.0.1:5000/api';
 
-// --- CORE AUTHENTICATION FUNCTIONS ---
-
-/**
- * Logs a user in by validating credentials and updating the session.
- */
-function loginUser() {
-    const email = document.getElementById('loginEmail').value;
-    const password = document.getElementById('loginPassword').value;
-
-    if (!email || !password) {
-        showMessage('Please enter both email and password', 'error');
-        return;
-    }
-
-    // Hardcoded admin user
-    if (email === 'admin@admin.com' && password === 'password123') {
-        const adminUser = { id: 'admin-001', name: 'Admin', email: 'admin@admin.com', role: 'admin' };
-        finalizeLogin(adminUser, 'Admin login successful!');
-        return;
-    }
-
-    // Regular user
-    const users = JSON.parse(localStorage.getItem('users') || '[]');
-    const user = users.find(u => u.email === email && u.password === password);
-
-    if (user) {
-        finalizeLogin(user, 'Login successful!');
-    } else {
-        showMessage('Invalid email or password', 'error');
-    }
-}
-
-/**
- * Registers a new user, validates input, and logs them in.
- */
-function registerUser() {
-    const name = document.getElementById('registerName').value;
-    const email = document.getElementById('registerEmail').value;
-    const password = document.getElementById('registerPassword').value;
-    const confirmPassword = document.getElementById('confirmPassword').value;
-
-    if (!name || !email || !password || !confirmPassword) {
-        return showMessage('Please fill in all fields', 'error');
-    }
-    if (password !== confirmPassword) {
-        return showMessage('Passwords do not match', 'error');
-    }
-
-    const users = JSON.parse(localStorage.getItem('users') || '[]');
-    if (users.some(u => u.email === email)) {
-        return showMessage('An account with this email already exists', 'error');
-    }
-
-    const newUser = {
-        id: 'user-' + Date.now(),
-        name: name,
-        email: email,
-        password: password, // In a real app, this should be hashed!
-        role: 'customer'
-    };
-
-    users.push(newUser);
-    localStorage.setItem('users', JSON.stringify(users));
-    finalizeLogin(newUser, 'Registration successful! You are now logged in.');
-}
-
-/**
- * Central function to finalize the login process.
- * @param {object} userObject - The user object to save to the session.
- * @param {string} successMessage - The message to show the user.
- */
-function finalizeLogin(userObject, successMessage) {
-    // 1. Save user to localStorage
-    localStorage.setItem('loggedInUser', JSON.stringify(userObject));
-    
-    // 2. Show success message
-    showMessage(successMessage, 'success');
-
-    // 3. Dispatch the event that the rest of the app listens for
-    // This is the most critical part.
-    console.log('Dispatching loginSuccess event from auth.js');
-    document.dispatchEvent(new CustomEvent('loginSuccess'));
-
-    // 4. Close the modal after a short delay to allow the user to see the message
-    closeAuthModal();
-}
-
-
-// --- UTILITY FUNCTIONS ---
-
-/**
- * Displays a message in the authentication modal.
- * @param {string} message - The text to display.
- * @param {'success'|'error'} type - The type of message.
- */
-function showMessage(message, type) {
-    const messageElement = document.getElementById('authMessage');
-    if (!messageElement) return;
-
-    messageElement.textContent = message;
-    messageElement.className = `mt-3 text-center alert alert-${type === 'error' ? 'danger' : 'success'}`;
-}
-
-/**
- * Closes the Bootstrap authentication modal.
- */
-function closeAuthModal() {
-    const authModalEl = document.getElementById('authModal');
-    if (!authModalEl) return;
-
-    // Hide the modal after a short delay
-    setTimeout(() => {
-        const modal = bootstrap.Modal.getInstance(authModalEl);
-        if (modal) {
-            modal.hide();
-        }
-        // Clear message after modal closes
-        const messageElement = document.getElementById('authMessage');
-        if(messageElement) messageElement.className = 'd-none';
-    }, 1200);
-}
-
-
-// --- FORM SWITCHING & INITIALIZATION ---
-
-/**
- * Shows the login form and hides the registration form.
- */
-function showLoginForm() {
-    document.getElementById('login-form-container').classList.remove('d-none');
-    document.getElementById('register-form-container').classList.add('d-none');
-    document.getElementById('authModalLabel').textContent = 'Login';
-}
-
-/**
- * Shows the registration form and hides the login form.
- */
-function showRegisterForm() {
-    document.getElementById('login-form-container').classList.add('d-none');
-    document.getElementById('register-form-container').classList.remove('d-none');
-    document.getElementById('authModalLabel').textContent = 'Register';
-}
-
-/**
- * Attaches all necessary event listeners for the authentication modal.
- * This function is called after the modal is loaded into the DOM.
- */
-function initializeAuthSystem() {
     const loginForm = document.getElementById('loginForm');
-    if (loginForm) {
-        loginForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            loginUser();
-        });
-    }
-
     const registerForm = document.getElementById('registerForm');
+    const authMessage = document.getElementById('authMessage');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    // --- Event Listeners ---
+
+    if (loginForm) {
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            await handleLogin(email, password);
+        });
+    }
+
     if (registerForm) {
-        registerForm.addEventListener('submit', (e) => {
+        registerForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            registerUser();
+            const username = document.getElementById('registerName').value;
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (password !== confirmPassword) {
+                showAuthMessage('Passwords do not match.', 'danger');
+                return;
+            }
+            await handleRegister(username, email, password);
+        });
+    }
+    
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            handleLogout();
         });
     }
 
-    const showRegisterLink = document.getElementById('show-register-link');
-    if(showRegisterLink) {
-        showRegisterLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            showRegisterForm();
-        });
+    // --- API Functions ---
+
+    async function handleLogin(email, password) {
+        try {
+            const response = await fetch(`${API_URL}/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password }),
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                localStorage.setItem('loggedInUser', JSON.stringify(result.user));
+                updateAuthState(true, result.user.username);
+                const authModal = bootstrap.Modal.getInstance(document.getElementById('authModal'));
+                if (authModal) {
+                    authModal.hide();
+                }
+                if (window.location.pathname.includes('bookings.html')) {
+                    document.getElementById('login-container').classList.add('d-none');
+                    document.getElementById('booking-interface-container').classList.remove('d-none');
+                    if (typeof initializeBookingInterface === 'function') {
+                        initializeBookingInterface();
+                    }
+                }
+            } else {
+                showAuthMessage(result.message, 'danger');
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+            showAuthMessage('An error occurred during login. Please try again.', 'danger');
+        }
     }
 
-    const showLoginLink = document.getElementById('show-login-link');
-    if(showLoginLink) {
-        showLoginLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            showLoginForm();
-        });
+    async function handleRegister(username, email, password) {
+        try {
+            const response = await fetch(`${API_URL}/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, email, password }),
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                showAuthMessage('Registration successful! Please log in.', 'success');
+                const signinTab = new bootstrap.Tab(document.getElementById('signin-tab'));
+                signinTab.show();
+            } else {
+                showAuthMessage(result.message, 'danger');
+            }
+        } catch (error) {
+            console.error('Registration error:', error);
+            showAuthMessage('An error occurred during registration. Please try again.', 'danger');
+        }
     }
-}
 
-// --- EVENT LISTENERS ---
+    function handleLogout() {
+        localStorage.removeItem('loggedInUser');
+        updateAuthState(false);
+        if (window.location.pathname.includes('bookings.html')) {
+            document.getElementById('login-container').classList.remove('d-none');
+            document.getElementById('booking-interface-container').classList.add('d-none');
+        }
+    }
 
-// The initializeAuthSystem function is now called from script.js after the modal is loaded.
+    // --- UI Update Functions ---
 
+    function showAuthMessage(message, type = 'danger') {
+        if (authMessage) {
+            authMessage.textContent = message;
+            authMessage.className = `mt-3 text-center alert alert-${type}`;
+            authMessage.classList.remove('d-none');
+        }
+    }
+
+    function updateAuthState(isLoggedIn, username = '') {
+        const authButtons = document.querySelector('.auth-buttons');
+        const userMenu = document.querySelector('.user-menu');
+        const userDisplay = document.getElementById('userDisplay');
+
+        if (isLoggedIn) {
+            authButtons.classList.add('d-none');
+            userMenu.classList.remove('d-none');
+            userDisplay.textContent = username;
+        } else {
+            authButtons.classList.remove('d-none');
+            userMenu.classList.add('d-none');
+            userDisplay.textContent = 'User';
+        }
+    }
+    
+    // --- Initial Check on Page Load ---
+
+    function checkInitialAuthState() {
+        const loggedInUser = JSON.parse(localStorage.getItem('loggedInUser'));
+        if (loggedInUser && loggedInUser.username) {
+            updateAuthState(true, loggedInUser.username);
+            if (window.location.pathname.includes('bookings.html')) {
+                document.getElementById('login-container').classList.add('d-none');
+                document.getElementById('booking-interface-container').classList.remove('d-none');
+                if (typeof initializeBookingInterface === 'function') {
+                    initializeBookingInterface();
+                }
+            }
+        } else {
+            updateAuthState(false);
+             if (window.location.pathname.includes('bookings.html')) {
+                document.getElementById('login-container').classList.remove('d-none');
+                document.getElementById('booking-interface-container').classList.add('d-none');
+            }
+        }
+    }
+
+    checkInitialAuthState();
+});

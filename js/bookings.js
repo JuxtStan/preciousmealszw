@@ -131,35 +131,41 @@ function initializeBookingForm() {
         }
 
         const loggedInUser = JSON.parse(localStorage.getItem('loggedInUser'));
-        if (!loggedInUser || !loggedInUser.id) {
+        if (!loggedInUser || !loggedInUser.userId) {
             alert('You must be logged in to make a booking.');
             return;
         }
 
-        const newBooking = {
-            id: 'booking-' + Date.now(),
-            userId: loggedInUser.id,
-            userName: loggedInUser.name,
-            userEmail: loggedInUser.email,
-            contactNumber: document.getElementById('contactNumber').value,
-            eventLocation: document.getElementById('eventLocation').value,
+        const bookingData = {
+            userId: loggedInUser.userId,
             eventDate: document.getElementById('eventDate').value,
             eventType: document.getElementById('eventType').value,
             timeSlot: document.getElementById('timeSlot').value,
             guestCount: document.getElementById('guestCount').value,
+            contactNumber: document.getElementById('contactNumber').value,
+            eventLocation: document.getElementById('eventLocation').value,
             specialRequests: document.getElementById('specialRequests').value,
-            status: 'Pending' // All new bookings are pending by default
         };
 
-        const bookings = JSON.parse(localStorage.getItem('bookings') || '[]');
-        bookings.push(newBooking);
-        localStorage.setItem('bookings', JSON.stringify(bookings));
-
-        alert('Booking submitted successfully! Your booking is pending confirmation.');
-
-        // Close the form and switch to the 'My Bookings' view
-        document.getElementById('dynamic-content-container').classList.add('d-none');
-        document.getElementById('my-bookings-btn')?.click();
+        fetch('http://127.0.0.1:5000/api/bookings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(bookingData),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.bookingId) {
+                alert('Booking submitted successfully! Your booking is pending confirmation.');
+                document.getElementById('dynamic-content-container').classList.add('d-none');
+                document.getElementById('my-bookings-btn')?.click();
+            } else {
+                alert(`Booking failed: ${data.message}`);
+            }
+        })
+        .catch(error => {
+            console.error('Booking submission error:', error);
+            alert('An error occurred while submitting your booking.');
+        });
     });
 
     updateFormSteps();
@@ -192,46 +198,51 @@ function loadMyBookings() {
     if (!myBookingsList) return;
 
     const loggedInUser = JSON.parse(localStorage.getItem('loggedInUser'));
-    if (!loggedInUser || !loggedInUser.id) {
+    if (!loggedInUser || !loggedInUser.userId) {
         myBookingsList.innerHTML = '<p class="text-center">Please log in to see your bookings.</p>';
         return;
     }
 
-    const allBookings = JSON.parse(localStorage.getItem('bookings') || '[]');
-    const userBookings = allBookings.filter(booking => booking.userId === loggedInUser.id);
+    fetch(`http://127.0.0.1:5000/api/bookings?userId=${loggedInUser.userId}`)
+        .then(response => response.json())
+        .then(userBookings => {
+            if (userBookings.length === 0) {
+                myBookingsList.innerHTML = '<p class="text-center">You have no bookings yet.</p>';
+                return;
+            }
 
-    if (userBookings.length === 0) {
-        myBookingsList.innerHTML = '<p class="text-center">You have no bookings yet.</p>';
-        return;
-    }
+            myBookingsList.innerHTML = '';
+            userBookings.forEach(booking => {
+                const bookingItem = document.createElement('a');
+                bookingItem.href = '#';
+                bookingItem.className = 'list-group-item list-group-item-action flex-column align-items-start';
 
-    myBookingsList.innerHTML = '';
-    userBookings.forEach(booking => {
-        const bookingItem = document.createElement('a');
-        bookingItem.href = '#';
-        bookingItem.className = 'list-group-item list-group-item-action flex-column align-items-start';
+                let statusClass = 'secondary';
+                if (booking.status === 'Confirmed') statusClass = 'success';
+                else if (booking.status === 'Rejected') statusClass = 'danger';
+                else if (booking.status === 'Pending') statusClass = 'warning';
 
-        let statusClass = 'secondary';
-        if (booking.status === 'Confirmed') statusClass = 'success';
-        else if (booking.status === 'Rejected') statusClass = 'danger'; // Changed from Cancelled
-        else if (booking.status === 'Pending') statusClass = 'warning';
+                bookingItem.innerHTML = `
+                    <div class="d-flex w-100 justify-content-between">
+                        <h5 class="mb-1">${booking.event_type}</h5>
+                        <small>${new Date(booking.event_date).toDateString()}</small>
+                    </div>
+                    <p class="mb-1">Guests: ${booking.guest_count} | Status: <span class="badge bg-${statusClass}">${booking.status}</span></p>
+                    <small class="text-muted">Click to view details</small>
+                `;
 
-        bookingItem.innerHTML = `
-            <div class="d-flex w-100 justify-content-between">
-                <h5 class="mb-1">${booking.eventType}</h5>
-                <small>${new Date(booking.eventDate).toDateString()}</small>
-            </div>
-            <p class="mb-1">Guests: ${booking.guestCount} | Status: <span class="badge bg-${statusClass}">${booking.status}</span></p>
-            <small class="text-muted">Click to view details</small>
-        `;
+                bookingItem.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    showBookingDetails(booking);
+                });
 
-        bookingItem.addEventListener('click', (e) => {
-            e.preventDefault();
-            showBookingDetails(booking);
+                myBookingsList.appendChild(bookingItem);
+            });
+        })
+        .catch(error => {
+            console.error('Error fetching bookings:', error);
+            myBookingsList.innerHTML = '<p class="text-center text-danger">Could not load bookings. Please try again later.</p>';
         });
-
-        myBookingsList.appendChild(bookingItem);
-    });
 }
 
 function showBookingDetails(booking) {
@@ -240,19 +251,19 @@ function showBookingDetails(booking) {
 
     let statusClass = 'secondary';
     if (booking.status === 'Confirmed') statusClass = 'success';
-    else if (booking.status === 'Rejected') statusClass = 'danger'; // Changed from Cancelled
+    else if (booking.status === 'Rejected') statusClass = 'danger';
     else if (booking.status === 'Pending') statusClass = 'warning';
 
     detailsContent.innerHTML = `
-        <h4>${booking.eventType}</h4>
+        <h4>${booking.event_type}</h4>
         <hr>
         <p><strong>Booking ID:</strong> ${booking.id}</p>
-        <p><strong>Date:</strong> ${new Date(booking.eventDate).toDateString()}</p>
-        <p><strong>Time:</strong> ${booking.timeSlot}</p>
-        <p><strong>Contact Number:</strong> ${booking.contactNumber}</p>
-        <p><strong>Event Location:</strong> ${booking.eventLocation}</p>
-        <p><strong>Number of Guests:</strong> ${booking.guestCount}</p>
-        <p><strong>Special Requests:</strong> ${booking.specialRequests || 'None'}</p>
+        <p><strong>Date:</strong> ${new Date(booking.event_date).toDateString()}</p>
+        <p><strong>Time:</strong> ${booking.time_slot}</p>
+        <p><strong>Contact Number:</strong> ${booking.contact_number}</p>
+        <p><strong>Event Location:</strong> ${booking.event_location}</p>
+        <p><strong>Number of Guests:</strong> ${booking.guest_count}</p>
+        <p><strong>Special Requests:</strong> ${booking.special_requests || 'None'}</p>
         <p><strong>Status:</strong> <span class="badge bg-${statusClass}">${booking.status}</span></p>
     `;
 
