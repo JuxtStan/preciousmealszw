@@ -101,6 +101,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function handleLogout() {
         localStorage.removeItem('loggedInUser');
         updateAuthState(false);
+
+        if (typeof resetBookingInterface === 'function') {
+            resetBookingInterface();
+        }
+
         if (window.location.pathname.includes('bookings.html')) {
             document.getElementById('login-container').classList.remove('d-none');
             document.getElementById('booking-interface-container').classList.add('d-none');
@@ -126,6 +131,13 @@ document.addEventListener('DOMContentLoaded', () => {
             authButtons.classList.add('d-none');
             userMenu.classList.remove('d-none');
             userDisplay.textContent = username;
+
+            const loggedInUser = JSON.parse(localStorage.getItem('loggedInUser'));
+            if (loggedInUser && loggedInUser.role === 'admin') {
+                document.getElementById('all-bookings-btn')?.classList.remove('d-none');
+            } else {
+                document.getElementById('all-bookings-btn')?.classList.add('d-none');
+            }
         } else {
             authButtons.classList.remove('d-none');
             userMenu.classList.add('d-none');
@@ -138,7 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function checkInitialAuthState() {
         const loggedInUser = JSON.parse(localStorage.getItem('loggedInUser'));
         if (loggedInUser && loggedInUser.username) {
-            updateAuthState(true, loggedInUser.username);
+            
             if (window.location.pathname.includes('bookings.html')) {
                 document.getElementById('login-container').classList.add('d-none');
                 document.getElementById('booking-interface-container').classList.remove('d-none');

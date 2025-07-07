@@ -13,13 +13,17 @@ conn = sqlite3.connect(db_path)
 # Create a cursor object to execute SQL commands
 cursor = conn.cursor()
 
+# Drop the existing users table to apply changes
+cursor.execute('DROP TABLE IF EXISTS users;')
+
 # Create the users table for login/signup
 cursor.execute('''
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT NOT NULL UNIQUE,
     password TEXT NOT NULL,
-    email TEXT NOT NULL UNIQUE
+    email TEXT NOT NULL UNIQUE,
+    role TEXT NOT NULL DEFAULT 'user'
 );
 ''')
 

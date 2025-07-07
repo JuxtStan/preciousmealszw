@@ -5,6 +5,11 @@
 
 let isBookingInterfaceInitialized = false;
 
+function resetBookingInterface() {
+    isBookingInterfaceInitialized = false;
+    console.log('Booking interface state has been reset.');
+}
+
 /**
  * Initializes the entire booking interface: calendar and button listeners.
  * This function is idempotent and can be safely called multiple times.
@@ -276,93 +281,110 @@ function loadAllBookings() {
     const allBookingsList = document.getElementById('allBookingsList');
     if (!allBookingsList) return;
 
-    const allBookings = JSON.parse(localStorage.getItem('bookings') || '[]');
+    fetch('http://127.0.0.1:5000/api/admin/bookings')
+        .then(response => response.json())
+        .then(allBookings => {
+            if (allBookings.length === 0) {
+                allBookingsList.innerHTML = '<p class="text-center">There are no bookings yet.</p>';
+                return;
+            }
 
-    if (allBookings.length === 0) {
-        allBookingsList.innerHTML = '<p class="text-center">There are no bookings yet.</p>';
-        return;
-    }
-
-    const tableHTML = `
-        <table class="table table-hover table-sm">
-            <thead class="table-light">
-                <tr>
-                    <th>Customer</th>
-                    <th>Event Date</th>
-                    <th>Event Type</th>
-                    <th>Guests</th>
-                    <th>Contact</th>
-                    <th>Location</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${allBookings.map(booking => {
-                    let statusClass = 'secondary';
-                    if (booking.status === 'Confirmed') statusClass = 'success';
-                    else if (booking.status === 'Rejected') statusClass = 'danger';
-                    else if (booking.status === 'Pending') statusClass = 'warning';
-                    return `
+            const tableHTML = `
+                <table class="table table-hover table-sm">
+                    <thead class="table-light">
                         <tr>
-                            <td>${booking.userName}<br><small class="text-muted">${booking.userEmail}</small></td>
-                            <td>${new Date(booking.eventDate).toLocaleDateString()}</td>
-                            <td>${booking.eventType}</td>
-                            <td>${booking.guestCount}</td>
-                            <td>${booking.contactNumber}</td>
-                            <td>${booking.eventLocation}</td>
-                            <td><span class="badge bg-${statusClass}">${booking.status}</span></td>
-                            <td>
-                                ${booking.status === 'Pending' ? `
-                                    <button class="btn btn-success btn-sm approve-btn" data-id="${booking.id}">Approve</button>
-                                    <button class="btn btn-danger btn-sm reject-btn" data-id="${booking.id}">Reject</button>
-                                ` : `
-                                    <button class="btn btn-secondary btn-sm" disabled>Handled</button>
-                                `}
-                            </td>
+                            <th>Customer</th>
+                            <th>Event Date</th>
+                            <th>Event Type</th>
+                            <th>Guests</th>
+                            <th>Contact</th>
+                            <th>Location</th>
+                            <th>Status</th>
+                            <th>Actions</th>
                         </tr>
-                    `;
-                }).join('')}
-            </tbody>
-        </table>
-    `;
+                    </thead>
+                    <tbody>
+                        ${allBookings.map(booking => {
+                            let statusClass = 'secondary';
+                            if (booking.status === 'Confirmed') statusClass = 'success';
+                            else if (booking.status === 'Rejected') statusClass = 'danger';
+                            else if (booking.status === 'Pending') statusClass = 'warning';
+                            return `
+                                <tr>
+                                    <td>${booking.username}<br><small class="text-muted">${booking.email}</small></td>
+                                    <td>${new Date(booking.event_date).toLocaleDateString()}</td>
+                                    <td>${booking.event_type}</td>
+                                    <td>${booking.guest_count}</td>
+                                    <td>${booking.contact_number}</td>
+                                    <td>${booking.event_location}</td>
+                                    <td><span class="badge bg-${statusClass}">${booking.status}</span></td>
+                                    <td>
+                                        ${booking.status === 'pending' ? `
+                                            <button class="btn btn-success btn-sm approve-btn" data-id="${booking.id}">Approve</button>
+                                            <button class="btn btn-danger btn-sm reject-btn" data-id="${booking.id}">Reject</button>
+                                        ` : `
+                                            <button class="btn btn-secondary btn-sm" disabled>Handled</button>
+                                        `}
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            `;
 
-    allBookingsList.innerHTML = tableHTML;
+            allBookingsList.innerHTML = tableHTML;
 
-    // Add event listeners for the admin action buttons
-    allBookingsList.querySelectorAll('.approve-btn').forEach(button => {
-        button.addEventListener('click', (e) => {
-            const bookingId = e.currentTarget.getAttribute('data-id');
-            updateBookingStatus(bookingId, 'Confirmed');
+            // Add event listeners for the admin action buttons
+            allBookingsList.querySelectorAll('.approve-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const bookingId = e.currentTarget.getAttribute('data-id');
+                    updateBookingStatus(bookingId, 'Confirmed');
+                });
+            });
+
+            allBookingsList.querySelectorAll('.reject-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const bookingId = e.currentTarget.getAttribute('data-id');
+                    updateBookingStatus(bookingId, 'Rejected');
+                });
+            });
+        })
+        .catch(error => {
+            console.error('Error fetching all bookings:', error);
+            allBookingsList.innerHTML = '<p class="text-center text-danger">Could not load bookings. Please try again later.</p>';
         });
-    });
-
-    allBookingsList.querySelectorAll('.reject-btn').forEach(button => {
-        button.addEventListener('click', (e) => {
-            const bookingId = e.currentTarget.getAttribute('data-id');
-            updateBookingStatus(bookingId, 'Rejected');
-        });
-    });
 }
 
 function updateBookingStatus(bookingId, newStatus) {
-    let allBookings = JSON.parse(localStorage.getItem('bookings') || '[]');
-    const bookingIndex = allBookings.findIndex(b => b.id === bookingId);
-
-    if (bookingIndex !== -1) {
-        allBookings[bookingIndex].status = newStatus;
-        localStorage.setItem('bookings', JSON.stringify(allBookings));
-        
-        // Refresh the admin view to show the updated status
-        document.getElementById('all-bookings-btn')?.click();
-
-        // Refresh the calendar to reflect the booking change
-        initializeCalendar();
-    }
+    fetch(`http://127.0.0.1:5000/api/bookings/${bookingId}/status`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: newStatus }),
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Failed to update booking status');
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log(data.message);
+        // Refresh both admin and user views
+        if (document.getElementById('allBookingsList')) {
+            loadAllBookings();
+        }
+        if (document.getElementById('myBookingsList')) {
+            loadMyBookings();
+        }
+    })
+    .catch(error => {
+        console.error('Error updating booking status:', error);
+        alert('Could not update booking status. Please try again.');
+    });
 }
-
-// Expose the calendar initialization function to the global scope so it can be called from other scripts
-window.initializeBookingsCalendar = initializeCalendar;
 
 // --- Calendar Logic ---
 function initializeCalendar() {

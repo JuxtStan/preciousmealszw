@@ -32,8 +32,8 @@ def register_user():
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute(
-            'INSERT INTO users (username, email, password) VALUES (?, ?, ?)',
-            (username, email, hashed_password)
+            'INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)',
+            (username, email, hashed_password, 'user')
         )
         conn.commit()
         user_id = cursor.lastrowid
@@ -47,28 +47,41 @@ def register_user():
 @app.route('/api/login', methods=['POST'])
 def login_user():
     """Logs in an existing user."""
-    data = request.get_json()
-    email = data.get('email')
-    password = data.get('password')
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'message': 'Request body must be JSON'}), 415
 
-    if not email or not password:
-        return jsonify({'message': 'Email and password are required'}), 400
+        email = data.get('email')
+        password = data.get('password')
 
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM users WHERE email = ?', (email,))
-    user = cursor.fetchone()
-    conn.close()
+        if not email or not password:
+            return jsonify({'message': 'Email and password are required'}), 400
 
-    if user and bcrypt.checkpw(password.encode('utf-8'), user['password']):
-        user_data = {
-            'userId': user['id'],
-            'username': user['username'],
-            'email': user['email']
-        }
-        return jsonify({'message': 'Login successful', 'user': user_data}), 200
-    else:
-        return jsonify({'message': 'Invalid credentials'}), 401
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('SELECT * FROM users WHERE email = ?', (email,))
+        user = cursor.fetchone()
+
+        if user and bcrypt.checkpw(password.encode('utf-8'), user['password']):
+            user_data = {
+                'userId': user['id'],
+                'username': user['username'],
+                'email': user['email'],
+                'role': user['role']
+            }
+            conn.close()
+            return jsonify({'message': 'Login successful', 'user': user_data}), 200
+        else:
+            conn.close()
+            return jsonify({'message': 'Invalid credentials'}), 401
+            
+    except Exception as e:
+        print(f"[ERROR] An error occurred during login: {e}")
+        # Ensure the connection is closed even if an error occurs
+        if 'conn' in locals() and conn:
+            conn.close()
+        return jsonify({'message': 'An internal server error occurred.'}), 500
 
 @app.route('/api/bookings', methods=['POST'])
 def create_booking():
@@ -129,6 +142,65 @@ def get_user_bookings():
         conn.close()
 
     return jsonify(bookings), 200
+
+
+@app.route('/api/admin/bookings', methods=['GET'])
+def get_all_bookings():
+    """Fetches all bookings for admin users."""
+    # In a real application, you would verify the user's role from a session or token.
+    # For simplicity, we are not implementing full session-based auth here.
+    # We assume the frontend will only call this if the user is an admin.
+
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        # Join with users table to get user details
+        cursor.execute('''
+            SELECT b.*, u.username, u.email
+            FROM bookings b
+            JOIN users u ON b.user_id = u.id
+            ORDER BY b.event_date DESC
+        ''')
+        bookings = [dict(row) for row in cursor.fetchall()]
+    except sqlite3.Error as e:
+        print(f"Database error: {e}")
+        return jsonify({'message': 'Failed to fetch all bookings due to a database error'}), 500
+    finally:
+        conn.close()
+
+    return jsonify(bookings), 200
+
+
+@app.route('/api/bookings/<int:booking_id>/status', methods=['PUT'])
+def update_booking_status(booking_id):
+    """Updates the status of a specific booking."""
+    data = request.get_json()
+    new_status = data.get('status')
+
+    if not new_status:
+        return jsonify({'message': 'New status is required'}), 400
+
+    # In a real app, you'd also check if the user has permission to change the status.
+
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            'UPDATE bookings SET status = ? WHERE id = ?',
+            (new_status, booking_id)
+        )
+        conn.commit()
+
+        if cursor.rowcount == 0:
+            return jsonify({'message': 'Booking not found'}), 404
+
+    except sqlite3.Error as e:
+        print(f"Database error: {e}")
+        return jsonify({'message': 'Failed to update booking status due to a database error'}), 500
+    finally:
+        conn.close()
+
+    return jsonify({'message': f'Booking {booking_id} status updated to {new_status}'}), 200
 
 
 if __name__ == '__main__':
